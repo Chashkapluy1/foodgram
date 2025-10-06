@@ -1,17 +1,16 @@
+import os
+from dotenv import load_dotenv
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+load_dotenv()
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+SECRET_KEY = os.getenv('SECRET_KEY')
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-8v63^*)rml^qoktl8@ikd9yi6e_3dkefexfx2ugok%=q4ak8-0'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1']
 
 ALLOWED_HOSTS = []
 
@@ -32,6 +31,7 @@ INSTALLED_APPS = [
 
     # Сторонние библиотеки
     'rest_framework',
+    'rest_framework_simplejwt',
     'djoser',
     'django_filters',
 ]
@@ -119,3 +119,36 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.User'
+
+
+# Настройки Django Rest Framework
+REST_FRAMEWORK = {
+    # Аутентификация по умолчанию
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    # Права доступа по умолчанию (разрешить всё, будем настраивать для каждого ViewSet отдельно)
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+    # Пагинация
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 6,  # Количество объектов на странице, как в ТЗ
+}
+
+# Настройки Djoser
+DJOSER = {
+    'PASSWORD_RESET_CONFIRM_URL': '#/password/reset/confirm/{uid}/{token}',
+    'USERNAME_RESET_CONFIRM_URL': '#/username/reset/confirm/{uid}/{token}',
+    'ACTIVATION_URL': '#/activate/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': False,
+    'SERIALIZERS': {
+        'user_create': 'users.serializers.CustomUserCreateSerializer', # Указываем наш кастомный сериализатор для создания пользователя
+        'user': 'users.serializers.CustomUserSerializer', # Указываем наш кастомный сериализатор для отображения пользователя
+        'current_user': 'users.serializers.CustomUserSerializer', # и для текущего пользователя
+    },
+    'PERMISSIONS': {
+        'user_list': ['rest_framework.permissions.AllowAny'],
+    },
+    'HIDE_USERS': False,  # Не скрывать список пользователей
+}
