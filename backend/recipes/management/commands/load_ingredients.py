@@ -5,29 +5,38 @@ from recipes.models import Ingredient
 
 
 class Command(BaseCommand):
-    help = 'Загрузка ингредиентов из JSON файла в базу данных'
+    help = "Загрузка ингредиентов из JSON файла в базу данных"
 
     def handle(self, *args, **kwargs):
-        file_path = '../data/ingredients.json'  # Путь к файлу относительно manage.py
-        self.stdout.write(self.style.SUCCESS(f'Начинаю загрузку из {file_path}'))
+        file_path = "../data/ingredients.json"
+        start_message = f"Начинаю загрузку из {file_path}"
+        self.stdout.write(self.style.SUCCESS(start_message))
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as file:
+            with open(file_path, "r", encoding="utf-8") as file:
                 ingredients_data = json.load(file)
 
             ingredients_to_create = []
             for item in ingredients_data:
-                # Проверяем, нет ли уже такого ингредиента (по имени и ед. изм.)
-                if not Ingredient.objects.filter(name=item['name'], measurement_unit=item['measurement_unit']).exists():
+                if not Ingredient.objects.filter(
+                    name=item["name"],
+                    measurement_unit=item["measurement_unit"],
+                ).exists():
                     ingredients_to_create.append(
-                        Ingredient(name=item['name'], measurement_unit=item['measurement_unit'])
+                        Ingredient(
+                            name=item["name"],
+                            measurement_unit=item["measurement_unit"],
+                        )
                     )
-            # Используем bulk_create для эффективной вставки множества объектов
             Ingredient.objects.bulk_create(ingredients_to_create)
 
-            self.stdout.write(self.style.SUCCESS(f'Успешно загружено {len(ingredients_to_create)} новых ингредиентов.'))
+            count = len(ingredients_to_create)
+            success_message = (
+                f"Успешно загружено {count} новых ингредиентов."
+            )
+            self.stdout.write(self.style.SUCCESS(success_message))
 
         except FileNotFoundError:
-            self.stdout.write(self.style.ERROR(f'Файл {file_path} не найден.'))
+            self.stdout.write(self.style.ERROR(f"Файл {file_path} не найден."))
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Произошла ошибка: {e}'))
+            self.stdout.write(self.style.ERROR(f"Произошла ошибка: {e}"))
