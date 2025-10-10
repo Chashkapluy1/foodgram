@@ -3,27 +3,15 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import (
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
 from .filters import RecipeFilter
-from .models import (
-    Favorite,
-    Ingredient,
-    Recipe,
-    RecipeIngredient,
-    ShoppingCart,
-    Tag,
-)
-from .serializers import (
-    IngredientSerializer,
-    RecipeSerializer,
-    RecipeWriteSerializer,
-    TagSerializer,
-)
+from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                     ShoppingCart, Tag)
+from .serializers import (IngredientSerializer, RecipeSerializer,
+                          RecipeWriteSerializer, TagSerializer)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
