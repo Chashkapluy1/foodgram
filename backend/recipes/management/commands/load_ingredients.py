@@ -8,7 +8,7 @@ class Command(BaseCommand):
     help = "Загрузка ингредиентов из JSON файла в базу данных"
 
     def handle(self, *args, **kwargs):
-        file_path = "../data/ingredients.json"
+        file_path = "data/ingredients.json"
         start_message = f"Начинаю загрузку из {file_path}"
         self.stdout.write(self.style.SUCCESS(start_message))
 

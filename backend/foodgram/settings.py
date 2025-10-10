@@ -27,10 +27,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Сторонние библиотеки
     "rest_framework",
-    "rest_framework_simplejwt",
+    "rest_framework.authtoken", # <-- Эта строка важна для Token Auth
     "djoser",
     "django_filters",
-    "corsheaders",  # Добавлено для CORS
+    "corsheaders",
     # Наши приложения
     "users.apps.UsersConfig",
     "recipes.apps.RecipesConfig",
@@ -40,7 +40,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",  # Добавлено для CORS
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -80,9 +80,9 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("DB_NAME"),
-            "USER": os.getenv("DB_USER"),
-            "PASSWORD": os.getenv("DB_PASSWORD"),
+            "NAME": os.getenv("POSTGRES_DB"),
+            "USER": os.getenv("POSTGRES_USER"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
             "HOST": os.getenv("DB_HOST"),
             "PORT": os.getenv("DB_PORT"),
         }
@@ -115,19 +115,21 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
 
-# Настройки DRF и связанных библиотек
+# === ИЗМЕНЕНИЯ ЗДЕСЬ ===
+# Настройки DRF для использования Token Authentication
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        # Указываем, что основной способ аутентификации - через токены
+        'rest_framework.authentication.TokenAuthentication',
     ],
-    "DEFAULT_PAGINATION_CLASS":
-    "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 6,
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 6
 }
 
+# Настройки Djoser остаются теми же, он универсален
 DJOSER = {
     "PASSWORD_RESET_CONFIRM_URL": "#/password/reset/confirm/{uid}/{token}",
     "USERNAME_RESET_CONFIRM_URL": "#/username/reset/confirm/{uid}/{token}",
@@ -142,9 +144,4 @@ DJOSER = {
         "user_list": ["rest_framework.permissions.AllowAny"],
     },
     "HIDE_USERS": False,
-}
-
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
 }

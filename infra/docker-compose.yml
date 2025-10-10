@@ -1,14 +1,12 @@
 version: '3.8'
 
 services:
-  # Сервис базы данных PostgreSQL
   db:
     image: postgres:16-alpine
     container_name: foodgram-db
     volumes:
       - foodgram_db_data:/var/lib/postgresql/data/
-    env_file:
-      - ./.env
+    env_file: ./.env
     networks:
       - foodgram_network
     healthcheck:
@@ -17,7 +15,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # Сервис нашего Django-бэкенда
   backend:
     build: ../backend/
     container_name: foodgram-backend
@@ -25,49 +22,38 @@ services:
     volumes:
       - static_data:/app/static/
       - media_data:/app/media/
+      - ../data:/app/data:ro
     depends_on:
       db:
-        condition: service_healthy # Запускаемся только после того, как БД будет готова
-    env_file:
-      - ./.env
+        condition: service_healthy
+    env_file: ./.env
     networks:
       - foodgram_network
 
-  # Сервис для сборки фронтенда (запускается один раз)
-  frontend:
-    build: ../frontend/
-    container_name: foodgram-frontend
-    volumes:
-      - frontend_build:/app/result_build
-    networks:
-      - foodgram_network
-
-  # Сервис веб-сервера Nginx (шлюз)
   gateway:
-    image: nginx:1.25-alpine
+    # Указываем, что нужно собрать этот сервис
+    build:
+      # Контекст - корень проекта (на уровень выше), чтобы иметь доступ ко всем папкам
+      context: ..
+      # Явно указываем путь к Dockerfile относительно нового контекста
+      dockerfile: infra/Dockerfile.gateway
     container_name: foodgram-gateway
     ports:
       - "8088:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - frontend_build:/usr/share/nginx/html/
-      - ../docs/:/usr/share/nginx/html/api/docs/
+      # Пробрасываем только статику и медиа от Django
       - static_data:/var/html/static/
       - media_data:/var/html/media/
     depends_on:
       - backend
-      - frontend
     networks:
       - foodgram_network
 
-# Именованные volumes для сохранения данных
 volumes:
   foodgram_db_data:
   static_data:
   media_data:
-  frontend_build:
 
-# Изолированная сеть для проекта
 networks:
   foodgram_network:
     driver: bridge
