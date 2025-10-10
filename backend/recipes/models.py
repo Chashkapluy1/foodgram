@@ -1,4 +1,6 @@
 from django.conf import settings
+
+from django.core.validators import MinValueValidator
 from django.db import models
 
 User = settings.AUTH_USER_MODEL
@@ -54,9 +56,9 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag, related_name="recipes", verbose_name="Теги"
     )
-
     cooking_time = models.PositiveSmallIntegerField(
-        "Время приготовления (в минутах)"
+        "Время приготовления (в минутах)",
+        validators=[MinValueValidator(1, message="Время должно быть не меньше 1")]
     )
 
     class Meta:
@@ -77,7 +79,10 @@ class RecipeIngredient(models.Model):
     ingredient = models.ForeignKey(
         Ingredient, on_delete=models.CASCADE, verbose_name="Ингредиент"
     )
-    amount = models.PositiveSmallIntegerField("Количество")
+    amount = models.PositiveSmallIntegerField(
+        "Количество",
+        validators=[MinValueValidator(1, message="Количество должно быть не меньше 1")]
+    )
 
     class Meta:
         verbose_name = "Ингредиент в рецепте"

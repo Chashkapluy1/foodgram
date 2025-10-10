@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:16-alpine
@@ -31,16 +29,13 @@ services:
       - foodgram_network
 
   gateway:
-    # Указываем, что нужно собрать этот сервис
     build:
       context: ..
-      # Указываем путь к Dockerfile
       dockerfile: infra/Dockerfile.gateway
     container_name: foodgram-gateway
     ports:
       - "8088:80"
     volumes:
-      # Пробрасываем только статику и медиа от Django
       - static_data:/var/html/static/
       - media_data:/var/html/media/
     depends_on:
