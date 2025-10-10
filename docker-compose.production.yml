@@ -7,8 +7,6 @@
         volumes:
           - pg_data:/var/lib/postgresql/data/
         env_file: ./infra/.env
-        networks:
-          - foodgram_network
 
       backend:
         image: pavellagerev/foodgram_backend:latest
@@ -16,22 +14,15 @@
         volumes:
           - static_volume:/app/static/
           - media_volume:/app/media/
+          - ./data/:/app/data/
         depends_on:
           - db
         env_file: ./infra/.env
-        networks:
-          - foodgram_network
-
-      frontend:
-        image: pavellagerev/foodgram_frontend:latest
-        restart: always
-        volumes:
-          - static_volume:/app/build
-        networks:
-          - foodgram_network
 
       gateway:
-        image: pavellagerev/foodgram_gateway:latest
+        build:
+          context: .
+          dockerfile: ./infra/Dockerfile.gateway
         restart: always
         ports:
           - "8001:80"
@@ -40,15 +31,3 @@
           - media_volume:/var/html/media/
         depends_on:
           - backend
-          - frontend
-        networks:
-          - foodgram_network
-
-    volumes:
-      pg_data:
-      static_volume:
-      media_volume:
-
-    networks:
-      foodgram_network:
-        driver: bridge
