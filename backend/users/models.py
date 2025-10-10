@@ -3,9 +3,7 @@ from django.db import models
 
 
 class User(AbstractUser):
-    """
-    Кастомная модель пользователя.
-    """
+    """Кастомная модель пользователя."""
 
     email = models.EmailField(
         "Адрес электронной почты", unique=True, max_length=254
@@ -29,9 +27,7 @@ class User(AbstractUser):
 
 
 class Follow(models.Model):
-    """
-    Модель для подписок пользователей друг на друга.
-    """
+    """Модель для подписок пользователей друг на друга."""
 
     user = models.ForeignKey(
         User,

@@ -5,13 +5,10 @@ from rest_framework import serializers
 
 
 class Base64ImageField(serializers.ImageField):
-    """
-    Кастомное поле для изображений в base64.
-    """
+    """Кастомное поле для изображений в base64."""
 
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith("data:image"):
-            # Разделяем строку
             format, imgstr = data.split(";base64,")
             ext = format.split("/")[-1]
             # Декодируем строку и создаем файл

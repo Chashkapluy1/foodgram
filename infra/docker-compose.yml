@@ -33,9 +33,8 @@ services:
   gateway:
     # Указываем, что нужно собрать этот сервис
     build:
-      # Контекст - корень проекта (на уровень выше), чтобы иметь доступ ко всем папкам
       context: ..
-      # Явно указываем путь к Dockerfile относительно нового контекста
+      # Указываем путь к Dockerfile
       dockerfile: infra/Dockerfile.gateway
     container_name: foodgram-gateway
     ports:

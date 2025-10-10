@@ -1,15 +1,14 @@
-# --- Этап 1: Сборка фронтенда ---
+# Сборка фронтенда
 FROM node:18-alpine as build-stage
 WORKDIR /app
 
-# Пути теперь идут от корня проекта, без ../
 COPY frontend/package*.json ./
 COPY frontend/yarn.lock ./
 RUN yarn install
 COPY frontend/ ./
 RUN yarn build
 
-# --- Этап 2: Финальный образ Nginx ---
+# Финальный образ Nginx
 FROM nginx:1.25-alpine
 
 # Удаляем стандартную страницу-заглушку Nginx
@@ -19,10 +18,8 @@ RUN rm -f /usr/share/nginx/html/index.html
 COPY infra/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Копируем скомпилированные файлы из этапа сборки.
-# Это ключевая строка. Она предполагает, что сборка фронтенда создает папку 'build'.
 COPY --from=build-stage /app/build/ /usr/share/nginx/html/
 
-# Путь к docs теперь от корня проекта, без ../
 COPY docs/ /usr/share/nginx/html/api/docs/
 
 EXPOSE 80

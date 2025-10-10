@@ -10,7 +10,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Ключевые настройки из переменных окружения
+# Настройки из переменных окружения
 SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-default-key-for-dev")
 DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
@@ -27,7 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # Сторонние библиотеки
     "rest_framework",
-    "rest_framework.authtoken", # <-- Эта строка важна для Token Auth
+    "rest_framework.authtoken",
     "djoser",
     "django_filters",
     "corsheaders",
@@ -115,7 +115,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "users.User"
 
 
-# === ИЗМЕНЕНИЯ ЗДЕСЬ ===
 # Настройки DRF для использования Token Authentication
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -129,7 +128,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 6
 }
 
-# Настройки Djoser остаются теми же, он универсален
+# Настройки Djoser
 DJOSER = {
     "PASSWORD_RESET_CONFIRM_URL": "#/password/reset/confirm/{uid}/{token}",
     "USERNAME_RESET_CONFIRM_URL": "#/username/reset/confirm/{uid}/{token}",

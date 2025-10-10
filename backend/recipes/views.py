@@ -27,9 +27,7 @@ from .serializers import (
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Вьюсет для тегов.
-    """
+    """Вьюсет для тегов."""
 
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
@@ -37,10 +35,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Вьюсет для ингредиентов.
-    Есть поиск по названию.
-    """
+    """Вьюсет для ингредиентов."""
 
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
@@ -55,9 +50,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    """
-    Вьюсет для рецептов.
-    """
+    """Вьюсет для рецептов."""
 
     queryset = Recipe.objects.select_related("author").prefetch_related(
         "tags",
