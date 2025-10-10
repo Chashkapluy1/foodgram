@@ -1,53 +1,48 @@
-services:
-  db:
-    image: postgres:16-alpine
-    container_name: foodgram-db
-    volumes:
-      - foodgram_db_data:/var/lib/postgresql/data/
-    env_file: ./.env
-    networks:
-      - foodgram_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+    version: '3.8'
 
-  backend:
-    build: ../backend/
-    container_name: foodgram-backend
-    restart: always
-    volumes:
-      - static_data:/app/static/
-      - media_data:/app/media/
-      - ../data:/app/data:ro
-    depends_on:
+    services:
       db:
-        condition: service_healthy
-    env_file: ./.env
-    networks:
-      - foodgram_network
+        image: postgres:13.0-alpine
+        restart: always
+        volumes:
+          - pg_data:/var/lib/postgresql/data/
+        env_file: ./infra/.env
+        networks:
+          - foodgram_network
 
-  gateway:
-    build:
-      context: ..
-      dockerfile: infra/Dockerfile.gateway
-    container_name: foodgram-gateway
-    ports:
-      - "8088:80"
+      backend:
+        build: ./backend/
+        restart: always
+        volumes:
+          - static_volume:/app/static/
+          - media_volume:/app/media/
+          - ./data/:/app/data/
+        depends_on:
+          - db
+        env_file: ./infra/.env
+        networks:
+          - foodgram_network
+
+      gateway:
+        build:
+          context: .
+          dockerfile: ./infra/Dockerfile.gateway
+        restart: always
+        ports:
+          - "8001:80"
+        volumes:
+          - static_volume:/usr/share/nginx/html/
+          - media_volume:/var/html/media/
+        depends_on:
+          - backend
+        networks:
+          - foodgram_network
+
     volumes:
-      - static_data:/var/html/static/
-      - media_data:/var/html/media/
-    depends_on:
-      - backend
+      pg_data:
+      static_volume:
+      media_volume:
+
     networks:
-      - foodgram_network
-
-volumes:
-  foodgram_db_data:
-  static_data:
-  media_data:
-
-networks:
-  foodgram_network:
-    driver: bridge
+      foodgram_network:
+        driver: bridge
