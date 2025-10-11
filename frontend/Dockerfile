@@ -3,11 +3,11 @@ FROM node:18-alpine
 WORKDIR /app
 
 COPY package*.json ./
-    
-# Используем npm ci для надежной установки по lock-файлу
-RUN npm ci
+
+# Используем npm INSTALL с флагом для более гибкого разрешения зависимостей
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
-# Собираем production-версию приложения
+# Собираем статику для продакшена
 RUN npm run build

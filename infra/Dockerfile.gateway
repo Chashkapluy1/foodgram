@@ -2,16 +2,12 @@
 FROM node:18-alpine as build-stage
 WORKDIR /app
 
-# Копируем package.json и package-lock.json
 COPY frontend/package*.json ./
 
-# Используем npm ci с флагом --legacy-peer-deps для обхода конфликта версий
-RUN npm ci --legacy-peer-deps
+# Используем npm INSTALL с флагом для более гибкого разрешения зависимостей
+RUN npm install --legacy-peer-deps
 
-# Копируем весь остальной код фронтенда
 COPY frontend/ ./
-
-# Запускаем сборку
 RUN npm run build
 
 # Этап 2: Финальный образ Nginx
