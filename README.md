@@ -14,40 +14,43 @@
 *   **CI/CD:** GitHub Actions
 
 ### Эндпоинты проекта
-*   **Сайт:** [https://foodgram10.duckdns.org/](https://foodgram10.duckdns.org/)
-*   **Админ-панель:** [https://foodgram10.duckdns.org/admin/](https://foodgram10.duckdns.org/admin/)
-*   **Документация API:** [https://foodgram10.duckdns.org/api/docs/](https://foodgram10.duckdns.org/api/docs/)
+*   [Сайт](https://foodgram10.duckdns.org/)
+*   [Админ-панель](https://foodgram10.duckdns.org/admin/)
+*   [Документация API](https://foodgram10.duckdns.org/api/docs/)
 
 ### Развертывание проекта на сервере (Docker)
 1.  Склонируйте репозиторий на ваш сервер:
     ```bash
     git clone https://github.com/Chashkapluy1/foodgram.git
     ```
-2.  Перейдите в папку с файлами инфраструктуры:
+2.  Перейдите в папку с проектом:
     ```bash
-    cd foodgram/infra/
+    cd foodgram/
     ```
 3.  **Создайте и заполните файл `.env`:** В директории `infra/` создайте файл `.env` и заполните его своими данными (см. пример ниже).
 
 4.  Запустите проект с помощью Docker Compose:
     ```bash
-    sudo docker compose -f ../docker-compose.production.yml up -d
+    sudo docker compose -f docker-compose.production.yml up -d
     ```
 5.  Выполните миграции, соберите статику и загрузите данные:
     ```bash
     # Применить миграции
-    sudo docker compose -f ../docker-compose.production.yml exec backend python manage.py migrate
+    sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
     # Собрать статические файлы
-    sudo docker compose -f ../docker-compose.production.yml exec backend python manage.py collectstatic --no-input
+    sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
     # Загрузить ингредиенты в базу данных
-    sudo docker compose -f ../docker-compose.production.yml exec backend python manage.py load_ingredients
+    sudo docker compose -f docker-compose.production.yml exec backend python manage.py load_ingredients
     # Загрузить теги в базу данных
-    sudo docker compose -f ../docker-compose.production.yml exec backend python manage.py load_tags
+    sudo docker compose -f docker-compose.production.yml exec backend python manage.py load_tags
     ```
 Проект будет доступен по вашему IP-адресу или доменному имени.
 
 ### Локальное развертывание проекта (без Docker)
-1.  Склонируйте репозиторий на ваш компьютер.
+1.  Склонируйте репозиторий на ваш компьютер:
+    ```bash
+    git clone https://github.com/Chashkapluy1/foodgram.git
+    ```
 2.  Перейдите в папку с бэкенд-кодом:
     ```bash
     cd foodgram/backend/
