@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -17,15 +15,13 @@ from recipes.models import (Favorite, Follow, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart, Tag, User)
 from .filters import RecipeFilter
 from .permissions import IsAuthorOrReadOnly
-from .serializers import (FollowSerializer, IngredientSerializer,
+from .serializers import (FollowingSerializer, IngredientSerializer,
                           RecipeReadSerializer, RecipeShortSerializer,
-                          RecipeWriteSerializer, TagSerializer,
-                          UserReadSerializer)
+                          RecipeWriteSerializer, TagSerializer,)
 
 
 class UserViewSet(DjoserUserViewSet):
     """Вьюсет для работы с пользователями и подписками."""
-    serializer_class = UserReadSerializer
 
     @action(
         detail=True,
@@ -35,28 +31,26 @@ class UserViewSet(DjoserUserViewSet):
     def subscribe(self, request, id=None):
         author = get_object_or_404(User, id=id)
 
-        if request.user == author:
-            raise ValidationError(
-                {'errors': 'Нельзя подписаться на самого себя.'}
-            )
-
         if request.method == 'POST':
+            if request.user == author:
+                raise ValidationError(
+                    {'errors': 'Нельзя подписаться на самого себя.'}
+                )
             subscription, created = Follow.objects.get_or_create(
                 user=request.user, author=author
             )
             if not created:
                 raise ValidationError(
-                    {'errors': 'Вы уже подписаны на этого автора.'}
+                    {'errors': f'Вы уже подписаны на {author.username}.'}
                 )
-            serializer = FollowSerializer(
+            serializer = FollowingSerializer(
                 author, context={'request': request}
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        subscription = get_object_or_404(
-            Follow, user=request.user, author=author
-        )
-        subscription.delete()
+        get_object_or_404(
+            Follow, user=request.user, author_id=id
+        ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -66,7 +60,7 @@ class UserViewSet(DjoserUserViewSet):
         """Список авторов, на которых подписан текущий пользователь."""
         authors = User.objects.filter(following__user=request.user)
         paginated_authors = self.paginate_queryset(authors)
-        serializer = FollowSerializer(
+        serializer = FollowingSerializer(
             paginated_authors, many=True, context={'request': request}
         )
         return self.get_paginated_response(serializer.data)
@@ -105,24 +99,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    def _add_to_list(self, model, user, pk):
-        """Вспомогательный метод для добавления в список."""
-        recipe = get_object_or_404(Recipe, pk=pk)
-        instance, created = model.objects.get_or_create(
-            user=user, recipe=recipe
-        )
-        if not created:
-            raise ValidationError(
-                {'errors': 'Рецепт уже был добавлен в этот список.'}
+    def _manage_list(self, model, request, pk):
+        if request.method == 'POST':
+            recipe = get_object_or_404(Recipe, pk=pk)
+            _, created = model.objects.get_or_create(
+                user=request.user, recipe=recipe
             )
-        serializer = RecipeShortSerializer(recipe)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def _remove_from_list(self, model, user, pk):
-        """Вспомогательный метод для удаления из списка."""
-        recipe = get_object_or_404(Recipe, pk=pk)
-        instance = get_object_or_404(model, user=user, recipe=recipe)
-        instance.delete()
+            if not created:
+                raise ValidationError(
+                    {'errors': 'Рецепт уже был добавлен в этот список.'}
+                )
+            return Response(
+                RecipeShortSerializer(recipe).data,
+                status=status.HTTP_201_CREATED
+            )
+        get_object_or_404(
+            model, user=request.user, recipe__id=pk
+        ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -130,18 +123,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated]
     )
     def favorite(self, request, pk=None):
-        if request.method == 'POST':
-            return self._add_to_list(Favorite, request.user, pk)
-        return self._remove_from_list(Favorite, request.user, pk)
+        return self._manage_list(Favorite, request, pk)
 
     @action(
         detail=True, methods=['post', 'delete'],
         permission_classes=[IsAuthenticated]
     )
     def shopping_cart(self, request, pk=None):
-        if request.method == 'POST':
-            return self._add_to_list(ShoppingCart, request.user, pk)
-        return self._remove_from_list(ShoppingCart, request.user, pk)
+        return self._manage_list(ShoppingCart, request, pk)
 
     @action(
         detail=False, methods=['get'], permission_classes=[IsAuthenticated]
@@ -155,15 +144,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'ingredient__name', 'ingredient__measurement_unit'
         ).annotate(total_amount=Sum('amount')).order_by('ingredient__name')
 
-        recipes = Recipe.objects.filter(shopping_carts__user=user)
-
-        context = {
-            'ingredients': ingredients,
-            'recipes': recipes,
-            'date': datetime.now().strftime('%d.%m.%Y'),
-        }
-        shopping_list_text = render_to_string('shopping_list.txt', context)
-
+        shopping_list_text = render_to_string(
+            'shopping_list.txt', {'ingredients': ingredients}
+        )
         response = HttpResponse(
             shopping_list_text, content_type='text/plain'
         )

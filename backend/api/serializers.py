@@ -21,9 +21,11 @@ class UserReadSerializer(DjoserUserSerializer):
 
     def get_is_subscribed(self, author):
         user = self.context.get('request').user
-        return (user.is_authenticated
-                and user != author
-                and Follow.objects.filter(user=user, author=author).exists())
+        return (
+            user.is_authenticated
+            and user != author
+            and Follow.objects.filter(user=user, author=author).exists()
+        )
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -48,6 +50,7 @@ class RecipeIngredientReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'name', 'measurement_unit', 'amount')
+        read_only_fields = fields
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):
@@ -57,7 +60,6 @@ class RecipeReadSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientReadSerializer(
         source='recipe_ingredients', many=True
     )
-    image = Base64ImageField()
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
@@ -69,18 +71,18 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
-    def get_is_favorited(self, recipe):
+    def _is_in_list(self, model, obj):
         user = self.context.get('request').user
         return (
             user.is_authenticated
-            and Favorite.objects.filter(user=user, recipe=recipe).exists()
+            and model.objects.filter(user=user, recipe=obj).exists()
         )
 
-    def get_is_in_shopping_cart(self, recipe):
-        user = self.context.get('request').user
-        return (user.is_authenticated
-                and ShoppingCart.objects.filter(user=user,
-                                                recipe=recipe).exists())
+    def get_is_favorited(self, obj):
+        return self._is_in_list(Favorite, obj)
+
+    def get_is_in_shopping_cart(self, obj):
+        return self._is_in_list(ShoppingCart, obj)
 
 
 class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
@@ -111,8 +113,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         min_value=MIN_COOKING_TIME,
         error_messages={
             'min_value': (
-                f'Время приготовления должно быть '
-                f'не меньше {MIN_COOKING_TIME}.'
+                'Время приготовления должно быть не меньше '
+                f'{MIN_COOKING_TIME}.'
             )
         }
     )
@@ -126,29 +128,26 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def _add_ingredients_and_tags(self, recipe, ingredients, tags):
         """Вспомогательный метод для добавления тегов и ингредиентов."""
         recipe.tags.set(tags)
-        RecipeIngredient.objects.bulk_create([
+        RecipeIngredient.objects.bulk_create(
             RecipeIngredient(
                 recipe=recipe,
                 ingredient=item['id'],
                 amount=item['amount']
             ) for item in ingredients
-        ])
+        )
 
     def create(self, validated_data):
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(**validated_data)
+        recipe = super().create(validated_data)
         self._add_ingredients_and_tags(recipe, ingredients, tags)
         return recipe
 
     def update(self, instance, validated_data):
-        tags = validated_data.pop('tags', None)
-        ingredients = validated_data.pop('ingredients', None)
-        if tags is not None:
-            instance.tags.set(tags)
-        if ingredients is not None:
-            instance.recipe_ingredients.all().delete()
-            self._add_ingredients_and_tags(instance, ingredients, tags)
+        tags = validated_data.pop('tags')
+        ingredients = validated_data.pop('ingredients')
+        instance.recipe_ingredients.all().delete()
+        self._add_ingredients_and_tags(instance, ingredients, tags)
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):
@@ -173,10 +172,8 @@ class FollowSerializer(UserReadSerializer):
     recipes = serializers.SerializerMethodField()
 
     class Meta(UserReadSerializer.Meta):
-        fields = (
-            *UserReadSerializer.Meta.fields,
-            'recipes_count',
-            'recipes',
+        fields = UserReadSerializer.Meta.fields + (
+            'recipes_count', 'recipes'
         )
         read_only_fields = fields
 
