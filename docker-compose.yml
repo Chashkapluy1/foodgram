@@ -11,11 +11,12 @@ services:
       - foodgram_network
 
   backend:
-    image: pavellagerev/foodgram_backend:latest
+    build: ./backend/
     restart: always
     volumes:
       - static_volume:/app/static/
       - media_volume:/app/media/
+      - ./data/:/app/data/
     depends_on:
       - db
     env_file: ./infra/.env
@@ -23,7 +24,7 @@ services:
       - foodgram_network
 
   frontend:
-    image: pavellagerev/foodgram_frontend:latest
+    build: ./frontend/
     restart: always
     volumes:
       - static_volume:/app/build
@@ -31,7 +32,9 @@ services:
       - foodgram_network
 
   gateway:
-    image: pavellagerev/foodgram_gateway:latest
+    build:
+      context: .
+      dockerfile: ./infra/Dockerfile.gateway
     restart: always
     ports:
       - "8001:80"
