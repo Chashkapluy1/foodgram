@@ -9,7 +9,6 @@
         env_file: ./infra/.env
 
       backend:
-        # Теперь он будет скачиваться с Docker Hub
         image: pavellagerev/foodgram_backend:latest
         restart: always
         volumes:
