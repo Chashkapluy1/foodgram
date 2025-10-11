@@ -1,13 +1,11 @@
-import re
-
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
-from .constants import (MIN_COOKING_TIME, MIN_INGREDIENT_AMOUNT,
-                        MAX_LENGTH_INGREDIENT_NAME, MAX_LENGTH_INGREDIENT_UNIT,
+from .constants import (MAX_LENGTH_INGREDIENT_NAME, MAX_LENGTH_INGREDIENT_UNIT,
                         MAX_LENGTH_RECIPE_NAME, MAX_LENGTH_TAG_NAME,
-                        MAX_LENGTH_TAG_SLUG)
+                        MAX_LENGTH_TAG_SLUG, MIN_COOKING_TIME,
+                        MIN_INGREDIENT_AMOUNT)
 
 
 class User(AbstractUser):
@@ -87,7 +85,9 @@ class Tag(models.Model):
 
 class Ingredient(models.Model):
     """Модель ингредиента (продукта)."""
-    name = models.CharField('Название', max_length=MAX_LENGTH_INGREDIENT_NAME)
+    name = models.CharField(
+        'Название', max_length=MAX_LENGTH_INGREDIENT_NAME
+    )
     measurement_unit = models.CharField(
         'Единица измерения', max_length=MAX_LENGTH_INGREDIENT_UNIT
     )
@@ -164,7 +164,9 @@ class RecipeIngredient(models.Model):
         validators=[
             MinValueValidator(
                 MIN_INGREDIENT_AMOUNT,
-                message=f'Количество должно быть не меньше {MIN_INGREDIENT_AMOUNT}'
+                message=(
+                    f'Количество должно быть не меньше {MIN_INGREDIENT_AMOUNT}'
+                )
             )
         ]
     )

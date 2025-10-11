@@ -8,6 +8,7 @@ from .models import (Favorite, Follow, Ingredient, Recipe, RecipeIngredient,
 
 # --- Фильтры для админки ---
 
+
 class HasRecipesFilter(admin.SimpleListFilter):
     title = 'Наличие рецептов'
     parameter_name = 'has_recipes'
@@ -26,6 +27,7 @@ class HasRecipesFilter(admin.SimpleListFilter):
             ).filter(num_recipes=0)
 
 # --- Админка ---
+
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):

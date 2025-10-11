@@ -13,7 +13,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         file_path = 'data/tags.json'
-        self.stdout.write(self.style.SUCCESS(f'Начинаю загрузку из {file_path}'))
+        self.stdout.write(
+            self.style.SUCCESS(f'Начинаю загрузку из {file_path}')
+        )
 
         try:
             with open(file_path, 'r', encoding='utf-8') as file:
@@ -29,7 +31,7 @@ class Command(BaseCommand):
             )
 
             self.stdout.write(self.style.SUCCESS(
-                f'Загрузка тегов завершена.'
+                'Загрузка тегов завершена.'
             ))
 
         except FileNotFoundError:
