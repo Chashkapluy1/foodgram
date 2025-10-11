@@ -1,6 +1,7 @@
 from djoser.serializers import UserSerializer as DjoserUserSerializer
 from rest_framework import serializers
 
+from recipes.constants import MIN_COOKING_TIME, MIN_INGREDIENT_AMOUNT
 from recipes.fields import Base64ImageField
 from recipes.models import (Favorite, Follow, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart, Tag, User)
@@ -77,16 +78,22 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
     def get_is_in_shopping_cart(self, recipe):
         user = self.context.get('request').user
-        return (
-            user.is_authenticated
-            and ShoppingCart.objects.filter(user=user, recipe=recipe).exists()
-        )
+        return (user.is_authenticated
+                and ShoppingCart.objects.filter(user=user,
+                                                recipe=recipe).exists())
 
 
 class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
     """Сериализатор для записи ингредиентов в рецепт."""
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
-    amount = serializers.IntegerField(min_value=1)
+    amount = serializers.IntegerField(
+        min_value=MIN_INGREDIENT_AMOUNT,
+        error_messages={
+            'min_value': (
+                f'Количество должно быть не меньше {MIN_INGREDIENT_AMOUNT}.'
+            )
+        }
+    )
 
     class Meta:
         model = RecipeIngredient
@@ -100,12 +107,20 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     )
     ingredients = RecipeIngredientWriteSerializer(many=True)
     image = Base64ImageField()
-    cooking_time = serializers.IntegerField(min_value=1)
+    cooking_time = serializers.IntegerField(
+        min_value=MIN_COOKING_TIME,
+        error_messages={
+            'min_value': (
+                f'Время приготовления должно быть '
+                f'не меньше {MIN_COOKING_TIME}.'
+            )
+        }
+    )
 
     class Meta:
         model = Recipe
         fields = (
-            'tags', 'ingredients', 'name', 'image', 'text', 'cooking_time'
+            'ingredients', 'tags', 'image', 'name', 'text', 'cooking_time'
         )
 
     def _add_ingredients_and_tags(self, recipe, ingredients, tags):
@@ -158,10 +173,10 @@ class FollowSerializer(UserReadSerializer):
     recipes = serializers.SerializerMethodField()
 
     class Meta(UserReadSerializer.Meta):
-        # --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
         fields = (
             *UserReadSerializer.Meta.fields,
-            'recipes_count', 'recipes'
+            'recipes_count',
+            'recipes',
         )
         read_only_fields = fields
 

@@ -6,8 +6,6 @@ from django.utils.safestring import mark_safe
 from .models import (Favorite, Follow, Ingredient, Recipe, RecipeIngredient,
                      ShoppingCart, Tag, User)
 
-# --- Фильтры для админки ---
-
 
 class HasRecipesFilter(admin.SimpleListFilter):
     title = 'Наличие рецептов'
@@ -25,8 +23,6 @@ class HasRecipesFilter(admin.SimpleListFilter):
             return queryset.annotate(
                 num_recipes=Count('recipes')
             ).filter(num_recipes=0)
-
-# --- Админка ---
 
 
 @admin.register(User)
