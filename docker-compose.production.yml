@@ -1,54 +1,34 @@
-version: '3.8'
+    version: '3.8'
 
-services:
-  db:
-    image: postgres:13.0-alpine
-    restart: always
-    volumes:
-      - pg_data:/var/lib/postgresql/data/
-    env_file: ./infra/.env
-    networks:
-      - foodgram_network
+    services:
+      db:
+        image: postgres:13.0-alpine
+        restart: always
+        volumes:
+          - pg_data:/var/lib/postgresql/data/
+        env_file: ./infra/.env
 
-  backend:
-    image: pavellagerev/foodgram_backend:latest
-    restart: always
-    volumes:
-      - static_volume:/app/static/
-      - media_volume:/app/media/
-    depends_on:
-      - db
-    env_file: ./infra/.env
-    networks:
-      - foodgram_network
+      backend:
+        # Теперь он будет скачиваться с Docker Hub
+        image: pavellagerev/foodgram_backend:latest
+        restart: always
+        volumes:
+          - static_volume:/app/static/
+          - media_volume:/app/media/
+          - ./data/:/app/data/
+        depends_on:
+          - db
+        env_file: ./infra/.env
 
-  frontend:
-    image: pavellagerev/foodgram_frontend:latest
-    restart: always
-    volumes:
-      - static_volume:/app/build
-    networks:
-      - foodgram_network
-
-  gateway:
-    image: pavellagerev/foodgram_gateway:latest
-    restart: always
-    ports:
-      - "8001:80"
-    volumes:
-      - static_volume:/usr/share/nginx/html/
-      - media_volume:/var/html/media/
-    depends_on:
-      - backend
-      - frontend
-    networks:
-      - foodgram_network
-
-volumes:
-  pg_data:
-  static_volume:
-  media_volume:
-
-networks:
-  foodgram_network:
-    driver: bridge
+      gateway:
+        build:
+          context: .
+          dockerfile: ./infra/Dockerfile.gateway
+        restart: always
+        ports:
+          - "8001:80"
+        volumes:
+          - static_volume:/usr/share/nginx/html/
+          - media_volume:/var/html/media/
+        depends_on:
+          - backend
