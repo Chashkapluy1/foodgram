@@ -1,5 +1,5 @@
 # Используем базовый образ Nginx
-FROM nginx:1.25-alpine
+FROM node:16-alpine as build-stage
 
 # Копируем наш кастомный конфиг Nginx
 COPY infra/nginx.conf /etc/nginx/conf.d/default.conf

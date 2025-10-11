@@ -1,18 +1,14 @@
-# Используем базовый образ Node.js
-FROM node:18-alpine
+    # Используем СТАРУЮ, СОВМЕСТИМУЮ версию Node.js
+    FROM node:16-alpine
 
-# Устанавливаем рабочую директорию
-WORKDIR /app
+    WORKDIR /app
 
-# Копируем package.json и package-lock.json (если он есть)
-# Если lock-файла нет, он просто скопирует package.json
-COPY package*.json ./
+    COPY package*.json ./
+        
+    # Используем npm ci для надежной установки по lock-файлу
+    RUN npm ci --legacy-peer-deps
 
-# Устанавливаем зависимости. Эта команда самая надежная.
-RUN npm install --legacy-peer-deps
+    COPY . .
 
-# Копируем остальные файлы приложения
-COPY . .
-
-# Собираем статику
-RUN npm run build
+    # Собираем production-версию приложения
+    RUN npm run build
