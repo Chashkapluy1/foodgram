@@ -1,14 +1,13 @@
-    # Используем СТАРУЮ, СОВМЕСТИМУЮ версию Node.js
-    FROM node:16-alpine
+FROM node:18-alpine
 
-    WORKDIR /app
+WORKDIR /app
 
-    COPY package*.json ./
-        
-    # Используем npm ci для надежной установки по lock-файлу
-    RUN npm ci --legacy-peer-deps
+COPY package*.json ./
+    
+# Используем npm ci для надежной установки по lock-файлу
+RUN npm ci
 
-    COPY . .
+COPY . .
 
-    # Собираем production-версию приложения
-    RUN npm run build
+# Собираем production-версию приложения
+RUN npm run build
