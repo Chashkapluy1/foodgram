@@ -1,43 +1,43 @@
 import json
 
 from django.core.management.base import BaseCommand
-
 from recipes.models import Ingredient
 
-
 class Command(BaseCommand):
-    help = "Загрузка ингредиентов из JSON файла в базу данных"
+    """
+    Загрузка ингредиентов из JSON файла в базу данных.
+    Использует bulk_create с ignore_conflicts для высокой производительности.
+    """
+    help = 'Загрузка ингредиентов из data/ingredients.json'
 
     def handle(self, *args, **kwargs):
-        file_path = "data/ingredients.json"
-        start_message = f"Начинаю загрузку из {file_path}"
-        self.stdout.write(self.style.SUCCESS(start_message))
+        file_path = 'data/ingredients.json'
+        self.stdout.write(self.style.SUCCESS(f'Начинаю загрузку из {file_path}'))
 
         try:
-            with open(file_path, "r", encoding="utf-8") as file:
+            with open(file_path, 'r', encoding='utf-8') as file:
                 ingredients_data = json.load(file)
 
-            ingredients_to_create = []
-            for item in ingredients_data:
-                if not Ingredient.objects.filter(
-                    name=item["name"],
-                    measurement_unit=item["measurement_unit"],
-                ).exists():
-                    ingredients_to_create.append(
-                        Ingredient(
-                            name=item["name"],
-                            measurement_unit=item["measurement_unit"],
-                        )
-                    )
-            Ingredient.objects.bulk_create(ingredients_to_create)
+            ingredients_to_create = [
+                Ingredient(**item) for item in ingredients_data
+            ]
 
-            count = len(ingredients_to_create)
-            success_message = (
-                f"Успешно загружено {count} новых ингредиентов."
+            # bulk_create с ignore_conflicts - самый быстрый способ
+            # вставить данные, пропуская те, которые нарушают unique constraint.
+            Ingredient.objects.bulk_create(
+                ingredients_to_create,
+                ignore_conflicts=True
             )
-            self.stdout.write(self.style.SUCCESS(success_message))
+
+            self.stdout.write(self.style.SUCCESS(
+                f'Загрузка ингредиентов завершена.'
+            ))
 
         except FileNotFoundError:
-            self.stdout.write(self.style.ERROR(f"Файл {file_path} не найден."))
+            self.stdout.write(self.style.ERROR(
+                f'Файл {file_path} не найден.'
+            ))
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"Произошла ошибка: {e}"))
+            self.stdout.write(self.style.ERROR(
+                f'Произошла ошибка при загрузке {file_path}: {e}'
+            ))

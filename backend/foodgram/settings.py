@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'corsheaders',
     # Наши приложения
     'recipes.apps.RecipesConfig',
+    'api.apps.ApiConfig',
 ]
 
 MIDDLEWARE = [
@@ -147,6 +148,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 6
 }
 
+# Настройки Djoser
 DJOSER = {
     'PASSWORD_RESET_CONFIRM_URL':
         '#/password/reset/confirm/{uid}/{token}',
@@ -155,9 +157,9 @@ DJOSER = {
     'ACTIVATION_URL': '#/activate/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL': False,
     'SERIALIZERS': {
-        'user_create': 'recipes.serializers.CustomUserCreateSerializer',
-        'user': 'recipes.serializers.CustomUserSerializer',
-        'current_user': 'recipes.serializers.CustomUserSerializer',
+        'user_create': 'api.serializers.UserCreateSerializer',
+        'user': 'api.serializers.UserSerializer',
+        'current_user': 'api.serializers.UserSerializer',
     },
     'PERMISSIONS': {
         'user_list': ['rest_framework.permissions.AllowAny'],
