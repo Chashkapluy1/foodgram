@@ -13,7 +13,9 @@
     "react-router-dom": "^5.2.0",
     "react-scripts": "5.0.1",
     "react-tooltip": "5.21.6",
-    "web-vitals": "^1.0.1"
+    "web-vitals": "^1.0.1",
+    "ajv": "6.12.6",
+    "ajv-keywords": "3.5.2"
   },
   "scripts": {
     "start": "react-scripts start",
