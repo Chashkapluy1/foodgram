@@ -103,7 +103,13 @@ jobs:
           echo "${{ secrets.DOT_ENV }}" > .env
           
           sudo docker compose -p foodgram_project -f docker-compose.production.yml pull
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml down
+          
+          # Сначала запускаем ТОЛЬКО frontend, чтобы он скопировал файлы
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml run --rm frontend cp -r /app/build/. /static/
+          
+          # Теперь запускаем всё остальное
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d --remove-orphans
           
           # Выполняем миграции и сбор статики
           sudo docker compose -p foodgram_project -f docker-compose.production.yml exec backend python manage.py migrate
