@@ -41,8 +41,9 @@
                 echo "${{ secrets.DOT_ENV }}" > ./infra/.env
                 # Скачиваем только новый образ бэкенда
                 sudo docker compose -f docker-compose.production.yml pull backend
-                # Перезапускаем все сервисы (бэкенд обновится)
-                sudo docker compose -f docker-compose.production.yml up -d
+                # Перезапускаем все сервисы. Backend обновится, Gateway пересоберется, если нужно.
+                sudo docker compose -f docker-compose.production.yml up -d --build
                 # Выполняем миграции и статику
                 sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
                 sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
+                sudo docker image prune -f

@@ -7,8 +7,11 @@
         volumes:
           - pg_data:/var/lib/postgresql/data/
         env_file: ./infra/.env
+        networks:
+          - foodgram_network
 
       backend:
+        # Скачиваем готовый образ с Docker Hub
         image: pavellagerev/foodgram_backend:latest
         restart: always
         volumes:
@@ -18,6 +21,8 @@
         depends_on:
           - db
         env_file: ./infra/.env
+        networks:
+          - foodgram_network
 
       gateway:
         build:
@@ -27,7 +32,17 @@
         ports:
           - "8001:80"
         volumes:
-          - static_volume:/usr/share/nginx/html/
+          - ./build:/usr/share/nginx/html
           - media_volume:/var/html/media/
         depends_on:
           - backend
+        networks:
+          - foodgram_network
+
+    volumes:
+      pg_data:
+      media_volume:
+
+    networks:
+      foodgram_network:
+        driver: bridge
