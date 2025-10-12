@@ -1,22 +1,22 @@
-FROM python:3.11-slim
+FROM python:3.9-slim
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Устанавливаем рабочую директорию внутри контейнера
 WORKDIR /app
 
-# Устанавливаем системные зависимости:
-RUN apt-get update && \
-    apt-get install -y libjpeg-dev postgresql-client && \
-    rm -rf /var/lib/apt/lists/*
-
+# Копируем файл с зависимостями и устанавливаем их
+# Это делается отдельным шагом, чтобы использовать кэш Docker.
+# Зависимости переустановятся только если requirements.txt изменится.
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Копируем весь остальной код проекта в рабочую директорию
 COPY . .
 
-COPY ./wait-for-postgres.sh /usr/local/bin/wait-for-postgres.sh
-RUN chmod +x /usr/local/bin/wait-for-postgres.sh
-
-EXPOSE 8000
-
-ENTRYPOINT ["wait-for-postgres.sh", "db"]
-
-CMD ["gunicorn", "foodgram.wsgi:application", "--bind", "0.0.0.0:8000"]
+# Команда, которая будет запускаться при старте контейнера.
+CMD ["gunicorn", "foodgram.wsgi:application", "--bind", "0:8000"]

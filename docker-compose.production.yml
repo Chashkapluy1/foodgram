@@ -11,12 +11,11 @@ services:
       - foodgram_network
 
   backend:
-    image: pavellagerev/foodgram_backend:latest
+    build: ./backend/
     restart: always
     volumes:
       - static_volume:/app/static/
       - media_volume:/app/media/
-      - ./data/:/app/data/
     depends_on:
       - db
     env_file: ./.env
@@ -24,21 +23,22 @@ services:
       - foodgram_network
 
   frontend:
-    image: pavellagerev/foodgram_frontend:latest
-    restart: always
+    build: ./frontend/
+    # Эта команда скопирует собранные файлы в том и остановит контейнер
+    command: cp -r /app/build/. /static/
     volumes:
-      - static_volume:/app/build
+      - static_volume:/static/
     networks:
       - foodgram_network
 
   gateway:
-    image: pavellagerev/foodgram_gateway:latest
+    build: ./infra/
     restart: always
     ports:
-      - "8001:80"
+      - "80:80"
     volumes:
       - static_volume:/usr/share/nginx/html/
-      - media_volume:/var/html/media/
+      - media_volume:/media/
     depends_on:
       - backend
       - frontend
