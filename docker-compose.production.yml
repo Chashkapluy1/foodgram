@@ -14,7 +14,7 @@ services:
     build: ./backend/
     restart: always
     volumes:
-      - static_volume:/app/static/
+      - static_volume:/backend_static
       - media_volume:/app/media/
     depends_on:
       - db
@@ -24,9 +24,9 @@ services:
 
   frontend:
     build: ./frontend/
-    command: cp -r /app/build/. /static_frontend/
+    command: cp -r /app/build/. /static/
     volumes:
-      - static_volume:/static_frontend/
+      - static_volume:/static/
     networks:
       - foodgram_network
 
@@ -36,11 +36,10 @@ services:
     ports:
       - "8001:80"
     volumes:
-      - static_volume:/usr/share/nginx/html/
+      - static_volume:/staticfiles/
       - media_volume:/media/
     depends_on:
       - backend
-      - frontend
     networks:
       - foodgram_network
 

@@ -103,9 +103,17 @@ jobs:
           echo "${{ secrets.DOT_ENV }}" > .env
           
           sudo docker compose -f docker-compose.production.yml pull
-          sudo docker compose -f docker-compose.production.yml down
-          sudo docker compose -f docker-compose.production.yml up -d
           
+          # Эта команда запустит frontend, он скопирует файлы и остановится
+          sudo docker compose -f docker-compose.production.yml up -d frontend
+
+          # Ждем, пока frontend закончит копирование
+          sleep 5 
+          
+          # Запускаем остальные сервисы
+          sudo docker compose -f docker-compose.production.yml up -d --remove-orphans backend db gateway
+          
+          # Выполняем миграции и сбор статики
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
           
