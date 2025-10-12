@@ -15,7 +15,7 @@ from recipes.models import (Favorite, Follow, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart, Tag, User)
 from .filters import RecipeFilter
 from .permissions import IsAuthorOrReadOnly
-from .serializers import (FollowingSerializer, IngredientSerializer,
+from .serializers import (FollowSerializer, IngredientSerializer,
                           RecipeReadSerializer, RecipeShortSerializer,
                           RecipeWriteSerializer, TagSerializer,)
 
@@ -43,7 +43,7 @@ class UserViewSet(DjoserUserViewSet):
                 raise ValidationError(
                     {'errors': f'Вы уже подписаны на {author.username}.'}
                 )
-            serializer = FollowingSerializer(
+            serializer = FollowSerializer(
                 author, context={'request': request}
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -60,7 +60,7 @@ class UserViewSet(DjoserUserViewSet):
         """Список авторов, на которых подписан текущий пользователь."""
         authors = User.objects.filter(following__user=request.user)
         paginated_authors = self.paginate_queryset(authors)
-        serializer = FollowingSerializer(
+        serializer = FollowSerializer(
             paginated_authors, many=True, context={'request': request}
         )
         return self.get_paginated_response(serializer.data)
