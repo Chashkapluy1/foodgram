@@ -92,30 +92,24 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
-          if [ -d "foodgram-project" ]; then
-            cd foodgram-project
+          if [ -d "foodgram" ]; then
+            cd foodgram
             git pull
           else
-            git clone ${{ secrets.REPO_URL }} foodgram-project
-            cd foodgram-project
+            git clone https://github.com/Chashkapluy1/foodgram.git
+            cd foodgram
           fi
           
           echo "${{ secrets.DOT_ENV }}" > .env
           
-          sudo docker compose -f docker-compose.production.yml pull
-          
-          # Эта команда запустит frontend, он скопирует файлы и остановится
-          sudo docker compose -f docker-compose.production.yml up -d frontend
-
-          # Ждем, пока frontend закончит копирование
-          sleep 5 
-          
-          # Запускаем остальные сервисы
-          sudo docker compose -f docker-compose.production.yml up -d --remove-orphans backend db gateway
+          # Указываем имя проекта явно, чтобы избежать путаницы
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml down
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml pull
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d
           
           # Выполняем миграции и сбор статики
-          sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
-          sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml exec backend python manage.py migrate
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
           
           sudo docker image prune -f
 
