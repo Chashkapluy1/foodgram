@@ -11,7 +11,6 @@
           - foodgram_network
 
       backend:
-        # Скачиваем готовый образ с Docker Hub
         image: pavellagerev/foodgram_backend:latest
         restart: always
         volumes:
@@ -24,23 +23,31 @@
         networks:
           - foodgram_network
 
+      frontend:
+        image: pavellagerev/foodgram_frontend:latest
+        restart: always
+        volumes:
+          - static_volume:/app/build
+        networks:
+          - foodgram_network
+
       gateway:
-        build:
-          context: .
-          dockerfile: ./infra/Dockerfile.gateway
+        image: pavellagerev/foodgram_gateway:latest
         restart: always
         ports:
           - "8001:80"
         volumes:
-          - ./build:/usr/share/nginx/html
+          - static_volume:/usr/share/nginx/html/
           - media_volume:/var/html/media/
         depends_on:
           - backend
+          - frontend
         networks:
           - foodgram_network
 
     volumes:
       pg_data:
+      static_volume:
       media_volume:
 
     networks:
