@@ -14,7 +14,7 @@ services:
     build: ./backend/
     restart: always
     volumes:
-      - static_volume:/app/static_collected/
+      - static_volume:/app/static/
       - media_volume:/app/media/
     depends_on:
       - db
@@ -39,7 +39,7 @@ services:
     ports:
       - "8001:80"
     volumes:
-      - static_volume:/staticfiles/
+      - static_volume:/var/html/static/
       - media_volume:/media/
     depends_on:
       - backend
