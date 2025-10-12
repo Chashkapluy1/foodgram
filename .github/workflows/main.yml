@@ -11,10 +11,12 @@ jobs:
     services:
       postgres:
         image: postgres:13.10
+        # --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+        # Прописываем тестовые данные напрямую, без секретов
         env:
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: foodgram_test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
         ports: ["5432:5432"]
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
@@ -32,10 +34,12 @@ jobs:
         pip install -r ./backend/requirements.txt
 
     - name: Run Django tests
+      # --- И ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+      # Передаем те же самые тестовые данные в окружение тестов
       env:
-        POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-        POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        POSTGRES_DB: foodgram_test_db
+        POSTGRES_USER: test_user
+        POSTGRES_PASSWORD: test_password
         DB_HOST: 127.0.0.1
         DB_PORT: 5432
         SECRET_KEY: a-test-secret-key-for-ci
@@ -91,7 +95,6 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
-          # Клонируем или обновляем репозиторий
           if [ -d "foodgram-project" ]; then
             cd foodgram-project
             git pull
@@ -100,21 +103,15 @@ jobs:
             cd foodgram-project
           fi
           
-          # Записываем секреты в .env файл
           echo "${{ secrets.DOT_ENV }}" > .env
           
-          # Используем наш надежный метод деплоя
           sudo docker compose -f docker-compose.production.yml pull
           sudo docker compose -f docker-compose.production.yml down
           sudo docker compose -f docker-compose.production.yml up -d
           
-          # Выполняем миграции и сбор статики
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
-          # Если у тебя есть команда для загрузки данных, добавь ее сюда
-          # sudo docker compose -f docker-compose.production.yml exec backend python manage.py load_data
           
-          # Очищаем систему от старых образов
           sudo docker image prune -f
 
   send_message:
