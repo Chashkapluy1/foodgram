@@ -21,8 +21,7 @@ services:
     env_file: ./.env
     networks:
       - foodgram_network
-    entrypoint: /usr/local/bin/wait-for-postgres.sh
-    command: gunicorn foodgram.wsgi:application --bind 0:8000
+    entrypoint: ["/usr/local/bin/wait-for-postgres.sh", "db", "gunicorn", "foodgram.wsgi:application", "--bind", "0:8000"]
 
   frontend:
     build: ./frontend/
