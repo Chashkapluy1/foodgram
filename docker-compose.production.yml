@@ -14,24 +14,29 @@ services:
     build: ./backend/
     restart: always
     volumes:
-      - static_volume:/backend_static
+      - static_volume:/app/static_collected/
       - media_volume:/app/media/
     depends_on:
       - db
     env_file: ./.env
     networks:
       - foodgram_network
+    # Используем наш скрипт ожидания
+    entrypoint: ["wait-for-postgres.sh", "db", "gunicorn", "foodgram.wsgi:application", "--bind", "0:8000"]
 
   frontend:
     build: ./frontend/
-    command: cp -r /app/build/. /static/
+    # Эта команда просто скопирует билд в том и остановится
+    command: sh -c "cp -r /app/build/. /static/"
     volumes:
       - static_volume:/static/
     networks:
       - foodgram_network
 
   gateway:
-    build: ./infra/
+    build:
+      context: . # Контекст сборки - корень проекта
+      dockerfile: ./infra/Dockerfile.gateway
     restart: always
     ports:
       - "8001:80"
@@ -39,7 +44,9 @@ services:
       - static_volume:/staticfiles/
       - media_volume:/media/
     depends_on:
+      # Nginx должен ждать и бэкенд, и фронтенд
       - backend
+      - frontend
     networks:
       - foodgram_network
 

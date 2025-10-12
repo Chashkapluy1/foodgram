@@ -102,8 +102,6 @@ jobs:
           
           echo "${{ secrets.DOT_ENV }}" > .env
           
-          # Указываем имя проекта явно, чтобы избежать путаницы
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml down
           sudo docker compose -p foodgram_project -f docker-compose.production.yml pull
           sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d
           
