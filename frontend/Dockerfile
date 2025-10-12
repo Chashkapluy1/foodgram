@@ -8,8 +8,8 @@ WORKDIR /app
 COPY package*.json ./
 # Если используешь yarn, то: COPY yarn.lock ./
 
-# Устанавливаем зависимости
-RUN npm install
+# Устанавливаем зависимости с флагом --legacy-peer-deps
+RUN npm install --legacy-peer-deps
 # Если используешь yarn, то: RUN yarn install
 
 # Копируем весь остальной код
