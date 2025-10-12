@@ -21,12 +21,11 @@ services:
     env_file: ./.env
     networks:
       - foodgram_network
-    # Используем наш скрипт ожидания
-    entrypoint: ["wait-for-postgres.sh", "db", "gunicorn", "foodgram.wsgi:application", "--bind", "0:8000"]
+    entrypoint: /usr/local/bin/wait-for-postgres.sh
+    command: gunicorn foodgram.wsgi:application --bind 0:8000
 
   frontend:
     build: ./frontend/
-    # Эта команда просто скопирует билд в том и остановится
     command: sh -c "cp -r /app/build/. /static/"
     volumes:
       - static_volume:/static/
@@ -35,7 +34,7 @@ services:
 
   gateway:
     build:
-      context: . # Контекст сборки - корень проекта
+      context: .
       dockerfile: ./infra/Dockerfile.gateway
     restart: always
     ports:
@@ -44,7 +43,6 @@ services:
       - static_volume:/staticfiles/
       - media_volume:/media/
     depends_on:
-      # Nginx должен ждать и бэкенд, и фронтенд
       - backend
       - frontend
     networks:
