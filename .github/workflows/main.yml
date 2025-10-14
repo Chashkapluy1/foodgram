@@ -80,7 +80,7 @@ jobs:
     needs: build_and_push_to_docker_hub
     if: github.ref == 'refs/heads/main'
     steps:
-    - name: Executing remote ssh commands to deploy
+    - name: Test SSH Connection
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.HOST }}
@@ -88,30 +88,8 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
-          # --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
-          # Самый надежный способ добавить ключ
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          
-          # Полностью удаляем старую папку
-          sudo rm -rf foodgram
-          
-          # Клонируем по SSH
-          git clone git@github.com:Chashkapluy1/foodgram.git
-          cd foodgram
-          
-          echo "${{ secrets.DOT_ENV }}" > .env
-          
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml pull
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml down -v --remove-orphans
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d
-          
-          sleep 15
-          
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml exec backend python manage.py migrate
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
-          
-          sudo docker image prune -f
+          echo "Connection successful!"
+          ls -la
 
   send_message:
     runs-on: ubuntu-latest
