@@ -6,52 +6,41 @@ services:
     restart: always
     volumes:
       - pg_data:/var/lib/postgresql/data/
-    env_file: ./infra/.env
-    networks:
-      - foodgram_network
+    environment:
+      POSTGRES_USER: foodgram_user
+      POSTGRES_PASSWORD: foodgram_password
+      POSTGRES_DB: foodgram_db
+      POSTG-RES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5432:5432" # Пробрасываем порт, чтобы можно было подключиться к базе с компьютера
 
   backend:
     build: ./backend/
     restart: always
     volumes:
-      - static_volume:/app/collected_static/
+      - static_volume:/app/static/
       - media_volume:/app/media/
-      - ./data/:/app/data/
     depends_on:
       - db
-    env_file: ./infra/.env
-    networks:
-      - foodgram_network
-
-  frontend:
-    build: ./frontend/
-    restart: always
-    volumes:
-      - static_volume:/app/build
-    networks:
-      - foodgram_network
-
-  gateway:
-    build:
-      context: .
-      dockerfile: ./infra/Dockerfile.gateway
-    restart: always
+    environment:
+      # Прописываем переменные для локального запуска
+      POSTGRES_USER: foodgram_user
+      POSTGRES_PASSWORD: foodgram_password
+      POSTGRES_DB: foodgram_db
+      DB_HOST: db
+      DB_PORT: 5432
+      SECRET_KEY: 'my-local-secret-key-for-dev'
+      DEBUG: "True"
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
     ports:
-      - "8088:80"
-    volumes:
-      - static_volume:/usr/share/nginx/html/
-      - media_volume:/var/html/media/
-    depends_on:
-      - backend
-      - frontend
-    networks:
-      - foodgram_network
+      - "8000:8000" # Пробрасываем порт, чтобы можно было делать запросы из Postman
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --no-input &&
+             python manage.py load_ingredients &&
+             gunicorn foodgram.wsgi:application --bind 0:8000"
 
 volumes:
   pg_data:
   static_volume:
   media_volume:
-
-networks:
-  foodgram_network:
-    driver: bridge

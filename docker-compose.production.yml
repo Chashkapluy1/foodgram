@@ -18,14 +18,13 @@ services:
     build: ./backend/
     restart: always
     volumes:
-      - django_static_volume:/app/collected_static/ # Том для статики админки
+      - django_static_volume:/app/collected_static/
       - media_volume:/app/media/
     depends_on:
       - db
     env_file: ./.env
     networks:
       - foodgram_network
-    # При запуске выполняем все команды
     command: >
       sh -c "python manage.py migrate &&
              python manage.py collectstatic --no-input &&
@@ -34,8 +33,7 @@ services:
   frontend:
     build: ./frontend/
     volumes:
-      - frontend_static_volume:/app/build/ # Том для билда фронтенда
-    # Эта команда не нужна, так как контейнер ничего не делает после сборки
+      - frontend_static_volume:/app/build/
     networks:
       - foodgram_network
 
@@ -45,8 +43,8 @@ services:
     ports:
       - "8001:80"
     volumes:
-      - django_static_volume:/app/collected_static/ # Подключаем том админки
-      - frontend_static_volume:/app/frontend_static/ # Подключаем том фронтенда
+      - django_static_volume:/app/collected_static/
+      - frontend_static_volume:/app/frontend_static/
       - media_volume:/app/media/
     depends_on:
       - backend
