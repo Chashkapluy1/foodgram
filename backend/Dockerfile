@@ -15,8 +15,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Копируем скрипт ожидания и даем ему права
 COPY wait-for-postgres.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/wait-for-postgres.sh
 
-# Вместо entrypoint оставляем CMD по умолчанию
+# Собираем статику админки прямо при сборке образа
+RUN python manage.py collectstatic --no-input
+
+# Entrypoint остается в docker-compose
 CMD ["gunicorn", "foodgram.wsgi:application", "--bind", "0:8000"]
