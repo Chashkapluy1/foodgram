@@ -6,7 +6,6 @@ services:
     restart: always
     volumes:
       - pg_data:/var/lib/postgresql/data/
-    # Используем environment вместо env_file для явного указания кодировки
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -19,19 +18,18 @@ services:
     build: ./backend/
     restart: always
     volumes:
-      - static_volume:/app/collected_static/ # Отдельная папка для статики
+      - static_volume:/app/static/
       - media_volume:/app/media/
     depends_on:
       - db
     env_file: ./.env
     networks:
       - foodgram_network
-    entrypoint: ["/usr/local/bin/wait-for-postgres.sh", "db", "gunicorn", "foodgram.wsgi:application", "--bind", "0:8000"]
+    command: gunicorn foodgram.wsgi:application --bind 0:8000
 
   frontend:
     build: ./frontend/
-    volumes:
-      - static_volume:/static_frontend/ # Копируем в отдельную папку в томе
+    # Этот контейнер будет запускаться только для копирования
     networks:
       - foodgram_network
 
@@ -43,11 +41,10 @@ services:
     ports:
       - "8001:80"
     volumes:
-      - static_volume:/staticfiles/ # Подключаем общий том
+      - static_volume:/staticfiles/
       - media_volume:/media/
     depends_on:
       - backend
-      - frontend
     networks:
       - foodgram_network
 
