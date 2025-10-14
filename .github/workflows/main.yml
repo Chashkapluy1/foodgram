@@ -80,29 +80,31 @@ jobs:
     needs: build_and_push_to_docker_hub
     if: github.ref == 'refs/heads/main'
     steps:
-    - name: Executing remote ssh commands to deploy
+    - name: Copy docker-compose file to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USER }}
+        key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        source: "docker-compose.production.yml"
+        target: "~/foodgram"
+
+    - name: Execute deploy commands on server
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USER }}
         key: ${{ secrets.SSH_KEY }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
-          sudo rm -rf foodgram
-          
-          # Клонируем по HTTPS, используя токен для аутентификации
-          git clone https://${{ secrets.GH_PAT }}@github.com/Chashkapluy1/foodgram.git
-          cd foodgram
+          cd ~/foodgram
           
           echo "${{ secrets.DOT_ENV }}" > .env
           
           sudo docker compose -p foodgram_project -f docker-compose.production.yml pull
           sudo docker compose -p foodgram_project -f docker-compose.production.yml down -v --remove-orphans
           sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d
-          
-          sleep 15
-          
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml exec backend python manage.py migrate
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
           
           sudo docker image prune -f
 
