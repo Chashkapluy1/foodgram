@@ -18,7 +18,7 @@ services:
     build: ./backend/
     restart: always
     volumes:
-      - static_volume:/app/static/
+      - django_static_volume:/app/collected_static/
       - media_volume:/app/media/
     depends_on:
       - db
@@ -33,10 +33,9 @@ services:
   frontend:
     build: ./frontend/
     volumes:
-      - static_volume:/app/build
+      - frontend_static_volume:/app/build/
     networks:
       - foodgram_network
-    # Команда не нужна, контейнер просто хранит файлы
 
   gateway:
     build: ./infra/
@@ -44,8 +43,9 @@ services:
     ports:
       - "8001:80"
     volumes:
-      - static_volume:/staticfiles/
-      - media_volume:/media/
+      - django_static_volume:/app/collected_static/
+      - frontend_static_volume:/app/frontend_static/
+      - media_volume:/app/media/
     depends_on:
       - backend
     networks:
@@ -53,9 +53,6 @@ services:
 
 volumes:
   pg_data:
-  static_volume:
+  django_static_volume:
+  frontend_static_volume:
   media_volume:
-
-networks:
-  foodgram_network:
-    driver: bridge
