@@ -81,8 +81,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: 
-      - build_and_push_to_docker_hub
+    needs: build_and_push_to_docker_hub # Убедись, что все build-джобы здесь
     if: github.ref == 'refs/heads/main'
     steps:
     - name: Executing remote ssh commands to deploy
@@ -104,11 +103,16 @@ jobs:
           echo "${{ secrets.DOT_ENV }}" > .env
           
           sudo docker compose -p foodgram_project -f docker-compose.production.yml pull
+          
+          # Явно останавливаем все перед запуском
           sudo docker compose -p foodgram_project -f docker-compose.production.yml down
+          
+          # Запускаем все контейнеры. Frontend отработает и остановится.
           sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d
           
-          # Выполняем только миграции
+          # Выполняем миграции и сбор статики
           sudo docker compose -p foodgram_project -f docker-compose.production.yml exec backend python manage.py migrate
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
           
           sudo docker image prune -f
 

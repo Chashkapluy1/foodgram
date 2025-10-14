@@ -6,7 +6,12 @@ services:
     restart: always
     volumes:
       - pg_data:/var/lib/postgresql/data/
-    env_file: ./.env
+    # Используем environment вместо env_file для явного указания кодировки
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
     networks:
       - foodgram_network
 
@@ -14,7 +19,7 @@ services:
     build: ./backend/
     restart: always
     volumes:
-      - django_static_volume:/app/static/
+      - static_volume:/app/collected_static/ # Отдельная папка для статики
       - media_volume:/app/media/
     depends_on:
       - db
@@ -25,9 +30,8 @@ services:
 
   frontend:
     build: ./frontend/
-    command: sh -c "cp -r /app/build/. /app/frontend_static/"
     volumes:
-      - frontend_static_volume:/app/frontend_static/
+      - static_volume:/static_frontend/ # Копируем в отдельную папку в томе
     networks:
       - foodgram_network
 
@@ -39,9 +43,8 @@ services:
     ports:
       - "8001:80"
     volumes:
-      - django_static_volume:/app/static/
-      - frontend_static_volume:/app/frontend_static/
-      - media_volume:/app/media/
+      - static_volume:/staticfiles/ # Подключаем общий том
+      - media_volume:/media/
     depends_on:
       - backend
       - frontend
@@ -50,8 +53,7 @@ services:
 
 volumes:
   pg_data:
-  django_static_volume:
-  frontend_static_volume:
+  static_volume:
   media_volume:
 
 networks:

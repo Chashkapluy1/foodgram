@@ -14,7 +14,7 @@ services:
     build: ./backend/
     restart: always
     volumes:
-      - static_volume:/app/static/
+      - static_volume:/app/collected_static/
       - media_volume:/app/media/
       - ./data/:/app/data/
     depends_on:
