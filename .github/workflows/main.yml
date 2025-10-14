@@ -88,10 +88,10 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
-          # Полностью удаляем старую папку, чтобы избежать проблем с git pull
           sudo rm -rf foodgram
-          # Клонируем заново по SSH
-          git clone git@github.com:Chashkapluy1/foodgram.git
+          
+          # Клонируем по HTTPS, используя токен для аутентификации
+          git clone https://${{ secrets.GH_PAT }}@github.com/Chashkapluy1/foodgram.git
           cd foodgram
           
           echo "${{ secrets.DOT_ENV }}" > .env
@@ -100,10 +100,8 @@ jobs:
           sudo docker compose -p foodgram_project -f docker-compose.production.yml down -v --remove-orphans
           sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d
           
-          # Ждем, чтобы backend успел запуститься
           sleep 15
           
-          # Выполняем миграции и collectstatic
           sudo docker compose -p foodgram_project -f docker-compose.production.yml exec backend python manage.py migrate
           sudo docker compose -p foodgram_project -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
           
