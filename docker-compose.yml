@@ -10,37 +10,30 @@ services:
       POSTGRES_USER: foodgram_user
       POSTGRES_PASSWORD: foodgram_password
       POSTGRES_DB: foodgram_db
-      POSTG-RES_INITDB_ARGS: "--encoding=UTF8"
     ports:
-      - "5432:5432" # Пробрасываем порт, чтобы можно было подключиться к базе с компьютера
+      - "5432:5432"
 
   backend:
     build: ./backend/
-    restart: always
+    restart: on-failure
     volumes:
-      - static_volume:/app/static/
-      - media_volume:/app/media/
+      - ./backend/:/app/ # Подключаем исходный код напрямую для быстрой отладки
     depends_on:
       - db
     environment:
-      # Прописываем переменные для локального запуска
       POSTGRES_USER: foodgram_user
       POSTGRES_PASSWORD: foodgram_password
       POSTGRES_DB: foodgram_db
       DB_HOST: db
       DB_PORT: 5432
-      SECRET_KEY: 'my-local-secret-key-for-dev'
+      SECRET_KEY: 'local-secret-key'
       DEBUG: "True"
       ALLOWED_HOSTS: "localhost,127.0.0.1"
     ports:
-      - "8000:8000" # Пробрасываем порт, чтобы можно было делать запросы из Postman
+      - "8000:8000"
     command: >
       sh -c "python manage.py migrate &&
-             python manage.py collectstatic --no-input &&
-             python manage.py load_ingredients &&
-             gunicorn foodgram.wsgi:application --bind 0:8000"
+             python manage.py runserver 0.0.0.0:8000"
 
 volumes:
   pg_data:
-  static_volume:
-  media_volume:
