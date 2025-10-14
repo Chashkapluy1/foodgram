@@ -57,3 +57,7 @@ volumes:
   django_static_volume:
   frontend_static_volume:
   media_volume:
+
+networks:
+  foodgram_network:
+    driver: bridge
