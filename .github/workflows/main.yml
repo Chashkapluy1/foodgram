@@ -86,16 +86,18 @@ jobs:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USER }}
         key: ${{ secrets.SSH_KEY }}
-        passphrase: ${{ secrets.SSH_PASSPHRASE }} 
+        passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
           sudo rm -rf foodgram
           git clone https://github.com/Chashkapluy1/foodgram.git
           cd foodgram
+          
           echo "${{ secrets.DOT_ENV }}" > .env
-          sudo docker compose -f docker-compose.production.yml pull
-          sudo docker compose -f docker-compose.production.yml down -v --remove-orphans
-          sudo docker compose -f docker-compose.production.yml up -d
-          # Убираем exec, так как они в command
+          
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml pull
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml down -v --remove-orphans
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d
+          
           sudo docker image prune -f
 
   send_message:

@@ -9,8 +9,7 @@ RUN npm install --legacy-peer-deps
 COPY . ./
 RUN npm run build
 
-
-# Берем самый маленький образ, так как нам нужно только хранить файлы
+# Этап 2: Финальный образ
 FROM alpine:latest
 
 # Копируем собранные файлы из этапа сборки
