@@ -25,15 +25,18 @@ services:
     env_file: ./.env
     networks:
       - foodgram_network
-    # Убираем command, будем запускать gunicorn напрямую
-    command: gunicorn foodgram.wsgi:application --bind 0:8000
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --no-input &&
+             gunicorn foodgram.wsgi:application --bind 0:8000"
 
   frontend:
     build: ./frontend/
     volumes:
-      - static_volume:/app/build/ # Важно: именно /app/build
+      - static_volume:/app/build
     networks:
       - foodgram_network
+    # Команда не нужна, контейнер просто хранит файлы
 
   gateway:
     build: ./infra/
@@ -45,7 +48,6 @@ services:
       - media_volume:/media/
     depends_on:
       - backend
-      - frontend
     networks:
       - foodgram_network
 
