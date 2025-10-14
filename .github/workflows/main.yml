@@ -88,14 +88,15 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
-          # Запускаем ssh-agent и добавляем ключ
-          eval $(ssh-agent -s)
-          ssh-add - <<< "${{ secrets.SSH_KEY }}"
+          # --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+          # Самый надежный способ добавить ключ
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           
-          # Полностью удаляем старую папку, чтобы избежать проблем
+          # Полностью удаляем старую папку
           sudo rm -rf foodgram
           
-          # Клонируем заново по SSH
+          # Клонируем по SSH
           git clone git@github.com:Chashkapluy1/foodgram.git
           cd foodgram
           
