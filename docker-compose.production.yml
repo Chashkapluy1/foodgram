@@ -18,41 +18,44 @@ services:
     build: ./backend/
     restart: always
     volumes:
-      - static_volume:/app/static/
+      - django_static_volume:/app/collected_static/ # Том для статики админки
       - media_volume:/app/media/
     depends_on:
       - db
     env_file: ./.env
     networks:
       - foodgram_network
-    command: gunicorn foodgram.wsgi:application --bind 0:8000
+    # При запуске выполняем все команды
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --no-input &&
+             gunicorn foodgram.wsgi:application --bind 0:8000"
 
   frontend:
     build: ./frontend/
-    # Этот контейнер будет запускаться только для копирования
+    volumes:
+      - frontend_static_volume:/app/build/ # Том для билда фронтенда
+    # Эта команда не нужна, так как контейнер ничего не делает после сборки
     networks:
       - foodgram_network
 
   gateway:
-    build:
-      context: .
-      dockerfile: ./infra/Dockerfile.gateway
+    build: ./infra/
     restart: always
     ports:
       - "8001:80"
     volumes:
-      - static_volume:/staticfiles/
-      - media_volume:/media/
+      - django_static_volume:/app/collected_static/ # Подключаем том админки
+      - frontend_static_volume:/app/frontend_static/ # Подключаем том фронтенда
+      - media_volume:/app/media/
     depends_on:
       - backend
+      - frontend
     networks:
       - foodgram_network
 
 volumes:
   pg_data:
-  static_volume:
+  django_static_volume:
+  frontend_static_volume:
   media_volume:
-
-networks:
-  foodgram_network:
-    driver: bridge
