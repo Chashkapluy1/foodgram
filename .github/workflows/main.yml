@@ -86,23 +86,24 @@ jobs:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USER }}
         key: ${{ secrets.SSH_KEY }}
-        passphrase: ${{ secrets.SSH_PASSPHRASE }}
+        passphrase: ${{ secrets.SSH_PASSPHRASE }} 
         script: |
-          # Полная очистка и клонирование с нуля
+          # Полностью удаляем старую папку
           sudo rm -rf foodgram
-          git clone git@github.com:Chashkapluy1/foodgram.git
+          # Клонируем по обычному HTTPS, так как репозиторий публичный
+          git clone https://github.com/Chashkapluy1/foodgram.git
           cd foodgram
           
           echo "${{ secrets.DOT_ENV }}" > .env
           
-          # Запускаем все контейнеры
           sudo docker compose -p foodgram_project -f docker-compose.production.yml pull
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml down -v --remove-orphans
           sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d
           
-          # Ждем, чтобы backend успел запуститься и подключиться к БД
+          # Ждем, чтобы backend успел запуститься
           sleep 15
           
-          # Выполняем команды на уже работающем контейнере
+          # Выполняем миграции и collectstatic
           sudo docker compose -p foodgram_project -f docker-compose.production.yml exec backend python manage.py migrate
           sudo docker compose -p foodgram_project -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
           
