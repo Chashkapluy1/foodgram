@@ -25,10 +25,7 @@ services:
     env_file: ./.env
     networks:
       - foodgram_network
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --no-input &&
-             gunicorn foodgram.wsgi:application --bind 0:8000"
+    command: gunicorn foodgram.wsgi:application --bind 0:8000
 
   frontend:
     build: ./frontend/
