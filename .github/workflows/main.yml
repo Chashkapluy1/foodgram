@@ -61,19 +61,28 @@ jobs:
       with:
         context: ./backend/
         push: true
-        tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_backend:latest
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/foodgram_backend:latest
+          ${{ secrets.DOCKER_USERNAME }}/foodgram_backend:${{ github.sha }}
+        no-cache: true
     - name: Push frontend to DockerHub
       uses: docker/build-push-action@v4
       with:
         context: ./frontend/
         push: true
-        tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_frontend:latest
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/foodgram_frontend:latest
+          ${{ secrets.DOCKER_USERNAME }}/foodgram_frontend:${{ github.sha }}
+        no-cache: true
     - name: Push gateway to DockerHub
       uses: docker/build-push-action@v4
       with:
         context: ./infra/
         push: true
-        tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_gateway:latest
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/foodgram_gateway:latest
+          ${{ secrets.DOCKER_USERNAME }}/foodgram_gateway:${{ github.sha }}
+        no-cache: true
 
   deploy:
     runs-on: ubuntu-latest
@@ -88,7 +97,6 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
-
           cd foodgram
           git pull
           echo "${{ secrets.DOT_ENV }}" > .env
