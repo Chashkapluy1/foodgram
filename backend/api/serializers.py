@@ -1,34 +1,29 @@
-import base64
-
-from django.core.files.base import ContentFile
 from djoser.serializers import UserSerializer as DjoserUserSerializer
 from rest_framework import serializers
 
 from recipes.constants import MIN_COOKING_TIME, MIN_INGREDIENT_AMOUNT
-from recipes.models import (Favorite, Ingredient, Recipe,
+from recipes.fields import Base64ImageField
+from recipes.models import (Favorite, Follow, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart, Tag, User)
-
-
-class Base64ImageField(serializers.ImageField):
-    """Кастомное поле для изображений в base64."""
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name=f'temp.{ext}')
-        return super().to_internal_value(data)
 
 
 class UserReadSerializer(DjoserUserSerializer):
     """Сериализатор для просмотра профиля пользователя."""
     is_subscribed = serializers.SerializerMethodField(read_only=True)
-    avatar = Base64ImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
         fields = (
             'email', 'id', 'username', 'first_name', 'last_name',
-            'is_subscribed', 'avatar'
+            'is_subscribed'
+        )
+
+    def get_is_subscribed(self, author):
+        user = self.context.get('request').user
+        return (
+            user.is_authenticated
+            and user != author
+            and Follow.objects.filter(user=user, author=author).exists()
         )
 
 
@@ -170,7 +165,7 @@ class RecipeShortSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class AuthorSubscriptionSerializer(UserReadSerializer):
+class AuthorSubscriptionSerializer(serializers.ModelSerializer):
     """Сериализатор для отображения авторов в подписках с рецептами."""
     recipes_count = serializers.ReadOnlyField(source='recipes.count')
     recipes = serializers.SerializerMethodField()

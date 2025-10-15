@@ -33,14 +33,14 @@ class UserViewSet(DjoserUserViewSet):
     )
     def subscribe(self, request, id=None):
         author = get_object_or_404(User, id=id)
-
         if request.method == 'POST':
             if request.user == author:
                 raise ValidationError(
                     {'errors': 'Нельзя подписаться на самого себя.'}
                 )
-            if Follow.objects.filter(user=request.user,
-                                     author=author).exists():
+            if Follow.objects.filter(
+                user=request.user, author=author
+            ).exists():
                 raise ValidationError(
                     {'errors': f'Вы уже подписаны на {author.username}.'}
                 )
@@ -50,9 +50,8 @@ class UserViewSet(DjoserUserViewSet):
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        # Для метода DELETE
         subscription = get_object_or_404(
-            Follow, user=request.user, author=author
+            Follow, user=request.user, author_id=id
         )
         subscription.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -108,9 +107,9 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     """Вьюсет для рецептов."""
-    queryset = Recipe.objects.select_related('author').prefetch_related(
+    queryset = (Recipe.objects.select_related('author').prefetch_related(
         'tags', 'recipe_ingredients__ingredient'
-    )
+    ))
     permission_classes = (IsAuthorOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
@@ -128,9 +127,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, pk=pk)
         _, created = model.objects.get_or_create(user=user, recipe=recipe)
         if not created:
-            raise ValidationError(
-                {'errors': f'Рецепт "{recipe.name}" уже добавлен в список.'}
-            )
+            raise ValidationError({
+                'errors': (
+                    f'Рецепт "{recipe.name}" уже был добавлен в список.'
+                )
+            })
         serializer = RecipeShortSerializer(recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
