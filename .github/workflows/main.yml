@@ -89,6 +89,7 @@ jobs:
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
           sudo rm -rf foodgram
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml down -v --remove-orphans || true
           git clone https://github.com/Chashkapluy1/foodgram.git
           cd foodgram
           
