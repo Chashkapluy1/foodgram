@@ -1,0 +1,5 @@
+Список покупок для рецептов: {{ recipes_names }}
+
+{% for item in ingredients %}
+- {{ item.ingredient__name }} ({{ item.ingredient__measurement_unit }}) — {{ item.total_amount }}
+{% endfor %}

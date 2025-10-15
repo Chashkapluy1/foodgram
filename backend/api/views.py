@@ -1,4 +1,5 @@
 import io
+from datetime import datetime
 
 from django.db.models import Sum
 from django.http import FileResponse
@@ -8,7 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from recipes.models import (Favorite, Follow, Ingredient, Recipe,
@@ -25,6 +26,7 @@ from .serializers import (AuthorSubscriptionSerializer, IngredientSerializer,
 class UserViewSet(DjoserUserViewSet):
     """Вьюсет для работы с пользователями и подписками."""
     serializer_class = UserReadSerializer
+    permission_classes = [AllowAny]
 
     @action(
         detail=True,
@@ -174,18 +176,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def download_shopping_cart(self, request):
         """Отдает пользователю .txt файл со списком покупок."""
+        user = request.user
         ingredients = RecipeIngredient.objects.filter(
-            recipe__shopping_carts__user=request.user
+            recipe__shopping_carts__user=user
         ).values(
             'ingredient__name', 'ingredient__measurement_unit'
         ).annotate(total_amount=Sum('amount')).order_by('ingredient__name')
 
+        recipes = Recipe.objects.filter(shopping_carts__user=user)
+        recipes_names = ', '.join([recipe.name for recipe in recipes])
+
         shopping_list_text = render_to_string(
-            'shopping_list.txt', {'ingredients': ingredients}
+            'shopping_list.txt', {
+                'ingredients': ingredients,
+                'recipes_names': recipes_names,
+            }
         )
-        file_content = io.BytesIO(shopping_list_text.encode('utf-8'))
         return FileResponse(
-            file_content,
+            shopping_list_text,
             as_attachment=True,
-            filename='shopping_list.txt'
+            filename='shopping_list.txt',
+            content_type='text/plain'
         )
