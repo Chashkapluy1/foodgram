@@ -23,12 +23,13 @@ class Base64ImageField(serializers.ImageField):
 class UserReadSerializer(DjoserUserSerializer):
     """Сериализатор для просмотра профиля пользователя."""
     is_subscribed = serializers.SerializerMethodField(read_only=True)
+    avatar = Base64ImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
         fields = (
             'email', 'id', 'username', 'first_name', 'last_name',
-            'is_subscribed'
+            'is_subscribed', 'avatar'
         )
 
     def get_is_subscribed(self, author):
@@ -141,9 +142,9 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
 
     def _add_ingredients_and_tags(self, recipe, ingredients, tags):
         """Вспомогательный метод для добавления тегов и ингредиентов."""
-        if tags:
+        if tags is not None:
             recipe.tags.set(tags)
-        if ingredients:
+        if ingredients is not None:
             recipe.recipe_ingredients.all().delete()
             RecipeIngredient.objects.bulk_create(
                 (RecipeIngredient(

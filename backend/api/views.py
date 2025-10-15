@@ -73,6 +73,26 @@ class UserViewSet(DjoserUserViewSet):
         )
         return self.get_paginated_response(serializer.data)
 
+    @action(
+        detail=False,
+        methods=['put', 'patch', 'delete'],
+        permission_classes=[IsAuthenticated]
+    )
+    def avatar(self, request):
+        """Метод для управления аватаром пользователя."""
+        user = request.user
+        if request.method in ['PUT', 'PATCH']:
+            serializer = self.get_serializer(
+                user, data=request.data, partial=True
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        user.avatar.delete()
+        user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     """Вьюсет для тегов."""
