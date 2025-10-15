@@ -80,7 +80,7 @@ jobs:
     needs: build_and_push_to_docker_hub
     if: github.ref == 'refs/heads/main'
     steps:
-    - name: Executing remote ssh commands to deploy
+    - name: Deploy to Server
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.HOST }}
@@ -88,14 +88,17 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.SSH_PASSPHRASE }}
         script: |
-          sudo rm -rf foodgram
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml down -v --remove-orphans || true
-          git clone https://github.com/Chashkapluy1/foodgram.git
+
           cd foodgram
-          
+          git pull
           echo "${{ secrets.DOT_ENV }}" > .env
           
+          # Скачиваем свежие образы с Docker Hub
           sudo docker compose -p foodgram_project -f docker-compose.production.yml pull
+          
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml down --remove-orphans
+          
+          # Запускаем новые контейнеры
           sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d
           
           sudo docker image prune -f
