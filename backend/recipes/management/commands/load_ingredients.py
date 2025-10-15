@@ -15,21 +15,22 @@ class Command(BaseCommand):
             self.style.SUCCESS(f'Начинаю загрузку из {file_path}')
         )
         try:
+            count_before = Ingredient.objects.count()
+
             with open(file_path, 'r', encoding='utf-8') as file:
                 reader = csv.DictReader(file)
-                ingredients_to_create = [
-                    Ingredient(
-                        name=row['name'],
-                        measurement_unit=row['measurement_unit']
-                    ) for row in reader
-                ]
                 Ingredient.objects.bulk_create(
-                    ingredients_to_create,
+                    [Ingredient(**row) for row in reader],
                     ignore_conflicts=True
                 )
-            self.stdout.write(
-                self.style.SUCCESS('Ингредиенты успешно загружены.')
-            )
+
+            count_after = Ingredient.objects.count()
+            added_count = count_after - count_before
+
+            self.stdout.write(self.style.SUCCESS(
+                f'Загрузка завершена. Добавлено {added_count} новых записей.'
+            ))
+
         except FileNotFoundError:
             self.stdout.write(
                 self.style.ERROR(f'Файл {file_path} не найден.')
