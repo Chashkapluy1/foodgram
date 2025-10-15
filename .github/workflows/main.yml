@@ -96,7 +96,6 @@ jobs:
           echo "${{ secrets.DOT_ENV }}" > .env
           
           sudo docker compose -p foodgram_project -f docker-compose.production.yml pull
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml down -v --remove-orphans
           sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d
           
           sudo docker image prune -f
