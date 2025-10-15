@@ -61,28 +61,19 @@ jobs:
       with:
         context: ./backend/
         push: true
-        tags: |
-          ${{ secrets.DOCKER_USERNAME }}/foodgram_backend:latest
-          ${{ secrets.DOCKER_USERNAME }}/foodgram_backend:${{ github.sha }}
-        no-cache: true
+        tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_backend:latest
     - name: Push frontend to DockerHub
       uses: docker/build-push-action@v4
       with:
         context: ./frontend/
         push: true
-        tags: |
-          ${{ secrets.DOCKER_USERNAME }}/foodgram_frontend:latest
-          ${{ secrets.DOCKER_USERNAME }}/foodgram_frontend:${{ github.sha }}
-        no-cache: true
+        tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_frontend:latest
     - name: Push gateway to DockerHub
       uses: docker/build-push-action@v4
       with:
         context: ./infra/
         push: true
-        tags: |
-          ${{ secrets.DOCKER_USERNAME }}/foodgram_gateway:latest
-          ${{ secrets.DOCKER_USERNAME }}/foodgram_gateway:${{ github.sha }}
-        no-cache: true
+        tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_gateway:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -101,14 +92,10 @@ jobs:
           git pull
           echo "${{ secrets.DOT_ENV }}" > .env
           
-          # Скачиваем свежие образы с Docker Hub
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml pull
+          # Запускаем новые контейнеры с принудительной пересборкой
+          sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d --build
           
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml down --remove-orphans
-          
-          # Запускаем новые контейнеры
-          sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d
-          
+          # Очищаем "мусорные" образы
           sudo docker image prune -f
 
   send_message:
