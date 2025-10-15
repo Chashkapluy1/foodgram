@@ -5,13 +5,12 @@ from djoser.serializers import UserSerializer as DjoserUserSerializer
 from rest_framework import serializers
 
 from recipes.constants import MIN_COOKING_TIME, MIN_INGREDIENT_AMOUNT
-from recipes.models import (Favorite, Follow, Ingredient, Recipe,
+from recipes.models import (Favorite, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart, Tag, User)
 
 
 class Base64ImageField(serializers.ImageField):
     """Кастомное поле для изображений в base64."""
-
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
             format, imgstr = data.split(';base64,')
@@ -30,14 +29,6 @@ class UserReadSerializer(DjoserUserSerializer):
         fields = (
             'email', 'id', 'username', 'first_name', 'last_name',
             'is_subscribed', 'avatar'
-        )
-
-    def get_is_subscribed(self, author):
-        user = self.context.get('request').user
-        return (
-            user.is_authenticated
-            and user != author
-            and Follow.objects.filter(user=user, author=author).exists()
         )
 
 
@@ -106,9 +97,8 @@ class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
     amount = serializers.IntegerField(
         min_value=MIN_INGREDIENT_AMOUNT,
         error_messages={
-            'min_value': (
-                f'Количество должно быть не меньше {MIN_INGREDIENT_AMOUNT}.'
-            )
+            'min_value':
+            f'Количество должно быть не меньше {MIN_INGREDIENT_AMOUNT}.'
         }
     )
 
@@ -169,9 +159,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return instance
 
     def to_representation(self, instance):
-        return RecipeReadSerializer(
-            instance, context={'request': self.context.get('request')}
-        ).data
+        return RecipeReadSerializer(instance, context=self.context).data
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
