@@ -134,7 +134,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         _, created = model.objects.get_or_create(user=user, recipe=recipe)
         if not created:
             raise ValidationError(
-                {'errors': f'Рецепт "{recipe.name}" уже был добавлен в список.'}
+                {'errors':
+                 f'Рецепт "{recipe.name}" уже был добавлен в список.'}
             )
         return Response(
             RecipeShortSerializer(recipe).data, status=status.HTTP_201_CREATED
