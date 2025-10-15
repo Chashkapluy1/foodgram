@@ -11,6 +11,5 @@ router.register('users', UserViewSet, basename='users')
 
 urlpatterns = [
     path('', include(router.urls)),
-    # URL для аутентификации Djoser будут здесь
     path('auth/', include('djoser.urls.authtoken')),
 ]

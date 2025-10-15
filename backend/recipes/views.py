@@ -1,11 +1,11 @@
-from django.shortcuts import get_object_or_404, redirect
+from django.http import Http404
+from django.shortcuts import redirect
 
 from .models import Recipe
 
 
 def recipe_short_link_redirect(request, recipe_id):
-    """
-    Редиректит с короткой ссылки на полную страницу рецепта на фронтенде.
-    """
-    get_object_or_404(Recipe, id=recipe_id)
+    """Редиректит с короткой ссылки на полную страницу рецепта."""
+    if not Recipe.objects.filter(id=recipe_id).exists():
+        raise Http404('Рецепт не найден.')
     return redirect(f'/recipes/{recipe_id}/')

@@ -6,7 +6,9 @@ from recipes.models import Ingredient
 
 
 class Command(BaseCommand):
-    """Загрузка ингредиентов из CSV файла."""
+    """
+    Загрузка ингредиентов из CSV файла без заголовков.
+    """
     help = 'Загрузка ингредиентов из data/ingredients.csv'
 
     def handle(self, *args, **kwargs):
@@ -15,20 +17,29 @@ class Command(BaseCommand):
             self.style.SUCCESS(f'Начинаю загрузку из {file_path}')
         )
         try:
-            count_before = Ingredient.objects.count()
+            # Очищаем таблицу перед загрузкой, чтобы избежать дубликатов
+            # при повторном запуске.
+            Ingredient.objects.all().delete()
+            self.stdout.write(
+                self.style.WARNING('Старые ингредиенты удалены.')
+            )
 
             with open(file_path, 'r', encoding='utf-8') as file:
-                reader = csv.DictReader(file)
-                Ingredient.objects.bulk_create(
-                    [Ingredient(**row) for row in reader],
-                    ignore_conflicts=True
-                )
+                # Используем обычный csv.reader, а не DictReader
+                reader = csv.reader(file)
 
-            count_after = Ingredient.objects.count()
-            added_count = count_after - count_before
+                # Готовим список объектов для массового создания
+                ingredients_to_create = [
+                    Ingredient(name=row[0], measurement_unit=row[1])
+                    for row in reader if row
+                ]
+
+            # Создаем все объекты одним запросом к БД
+            Ingredient.objects.bulk_create(ingredients_to_create)
 
             self.stdout.write(self.style.SUCCESS(
-                f'Загрузка завершена. Добавлено {added_count} новых записей.'
+                f'Загрузка завершена. '
+                f'Добавлено {len(ingredients_to_create)} новых записей.'
             ))
 
         except FileNotFoundError:

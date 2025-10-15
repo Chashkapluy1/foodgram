@@ -1,74 +1,68 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.db.models import Count
+from django.contrib.auth.models import Group
 from django.utils.safestring import mark_safe
 
 from .models import (Favorite, Follow, Ingredient, Recipe, RecipeIngredient,
                      ShoppingCart, Tag, User)
 
 
-class HasRecipesFilter(admin.SimpleListFilter):
-    title = 'Наличие рецептов'
-    parameter_name = 'has_recipes'
-
-    def lookups(self, request, model_admin):
-        return (('yes', 'Есть рецепты'), ('no', 'Нет рецептов'))
-
-    def queryset(self, request, queryset):
-        if self.value() == 'yes':
-            return queryset.annotate(
-                num_recipes=Count('recipes')
-            ).filter(num_recipes__gt=0)
-        if self.value() == 'no':
-            return queryset.annotate(
-                num_recipes=Count('recipes')
-            ).filter(num_recipes=0)
+# Убираем стандартную модель
+admin.site.unregister(Group)
 
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    """Кастомная админка для пользователей."""
+    """Кастомизация админ-панели для пользователей."""
     list_display = (
-        'id', 'username', 'email', 'get_full_name', 'get_recipes_count',
-        'get_followers_count', 'get_following_count'
+        'username', 'email', 'first_name', 'last_name',
+        'get_image_preview'
     )
     search_fields = ('username', 'email')
-    list_filter = ('is_staff', 'is_superuser', 'is_active', HasRecipesFilter)
-    empty_value_display = '-пусто-'
+    list_filter = ('is_staff', 'is_superuser', 'is_active')
+    # Добавляем 'avatar', чтобы его можно было редактировать
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Персональная информация', {'fields': ('first_name', 'last_name',
+                                                'email', 'avatar')}),
+        ('Разрешения', {'fields': ('is_active', 'is_staff', 'is_superuser',
+                                   'groups', 'user_permissions')}),
+        ('Важные даты', {'fields': ('last_login', 'date_joined')}),
+    )
+    readonly_fields = ('get_image_preview', 'last_login', 'date_joined')
 
-    @admin.display(description='Кол-во рецептов')
-    def get_recipes_count(self, user):
-        return user.recipes.count()
-
-    @admin.display(description='Кол-во подписчиков')
-    def get_followers_count(self, user):
-        return user.following.count()
-
-    @admin.display(description='Кол-во подписок')
-    def get_following_count(self, user):
-        return user.followers.count()
-
-
-@admin.register(Follow)
-class FollowAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'author')
-    search_fields = ('user__username', 'author__username')
-
-
-@admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'slug', 'color')
-    search_fields = ('name', 'slug')
+    @admin.display(description='Аватар')
+    def get_image_preview(self, user):
+        if user.avatar:
+            return mark_safe(f'<img src="{user.avatar.url}" width="100" />')
+        return 'Нет аватара'
 
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'measurement_unit')
-    search_fields = ('name', 'measurement_unit')
-    list_filter = ('measurement_unit',)
+    """Кастомизация админ-панели для ингредиентов."""
+    list_display = ('name', 'measurement_unit', 'get_recipe_count')
+    search_fields = ('name',)
+
+    @admin.display(description='В рецептах')
+    def get_recipe_count(self, ingredient):
+        return ingredient.recipes.count()
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    """Кастомизация админ-панели для тегов."""
+    # Убираем 'color' из списка.
+    list_display = ('name', 'slug', 'get_recipe_count')
+    search_fields = ('name', 'slug')
+
+    @admin.display(description='В рецептах')
+    def get_recipe_count(self, tag):
+        return tag.recipes.count()
 
 
 class RecipeIngredientInline(admin.TabularInline):
+    """Вспомогательный класс для отображения ингредиентов в рецепте."""
     model = RecipeIngredient
     extra = 1
     min_num = 1
@@ -76,14 +70,19 @@ class RecipeIngredientInline(admin.TabularInline):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
+    """Кастомизация админ-панели для рецептов."""
     list_display = (
-        'id', 'name', 'author', 'cooking_time', 'get_favorites_count',
+        'name', 'author', 'get_cooking_time_display', 'get_favorites_count',
         'get_image_preview'
     )
     list_filter = ('author', 'tags')
     search_fields = ('name', 'author__username')
     inlines = (RecipeIngredientInline,)
     readonly_fields = ('get_favorites_count', 'get_image_preview',)
+
+    @admin.display(description='Время (мин)')
+    def get_cooking_time_display(self, recipe):
+        return recipe.cooking_time
 
     @admin.display(description='В избранном')
     def get_favorites_count(self, recipe):
@@ -95,16 +94,9 @@ class RecipeAdmin(admin.ModelAdmin):
             return mark_safe(f'<img src="{recipe.image.url}" width="100" />')
         return 'Нет изображения'
 
-    get_favorites_count.short_description = 'В избранном (раз)'
 
-
-@admin.register(RecipeIngredient)
-class RecipeIngredientAdmin(admin.ModelAdmin):
-    list_display = ('id', 'recipe', 'ingredient', 'amount')
-    search_fields = ('recipe__name', 'ingredient__name')
-
-
-@admin.register(Favorite, ShoppingCart)
-class UserRecipeListAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'recipe')
-    search_fields = ('user__username', 'recipe__name')
+# Регистрируем остальные модели для управления
+admin.site.register(Favorite)
+admin.site.register(Follow)
+admin.site.register(ShoppingCart)
+admin.site.register(RecipeIngredient)
