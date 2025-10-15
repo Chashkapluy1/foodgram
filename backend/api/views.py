@@ -39,7 +39,8 @@ class UserViewSet(DjoserUserViewSet):
                     {'errors': 'Нельзя подписаться на самого себя.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            if Follow.objects.filter(user=request.user, author=author).exists():
+            if Follow.objects.filter(user=request.user,
+                                     author=author).exists():
                 return Response(
                     {'errors': f'Вы уже подписаны на {author.username}.'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -121,7 +122,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def _remove_from_list(self, model, user, pk):
         """Вспомогательный метод для удаления из списка."""
-        deleted_count, _ = model.objects.filter(user=user, recipe_id=pk).delete()
+        deleted_count, _ = model.objects.filter(user=user,
+                                                recipe_id=pk).delete()
         if not deleted_count:
             return Response(
                 {'errors': 'Этого рецепта не было в списке.'},

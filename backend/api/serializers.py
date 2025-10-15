@@ -127,7 +127,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         min_value=MIN_COOKING_TIME,
         error_messages={
             'min_value': (
-                f'Время приготовления должно быть не меньше {MIN_COOKING_TIME}.'
+                'Время приготовления должно быть не меньше '
+                f'{MIN_COOKING_TIME}.'
             )
         }
     )
