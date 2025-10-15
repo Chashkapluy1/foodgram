@@ -1,9 +1,10 @@
 from django_filters.rest_framework import FilterSet, filters
 
-from recipes.models import Recipe, Tag, User
+from recipes.models import Ingredient, Recipe, Tag, User
 
 
 class RecipeFilter(FilterSet):
+    """Фильтр для рецептов."""
     tags = filters.ModelMultipleChoiceFilter(
         field_name='tags__slug',
         to_field_name='slug',
@@ -28,3 +29,15 @@ class RecipeFilter(FilterSet):
         if value and self.request.user.is_authenticated:
             return queryset.filter(shopping_carts__user=self.request.user)
         return queryset
+
+
+class IngredientFilter(FilterSet):
+    """
+    Фильтр для поиска ингредиентов по частичному вхождению
+    в начале названия.
+    """
+    name = filters.CharFilter(field_name='name', lookup_expr='istartswith')
+
+    class Meta:
+        model = Ingredient
+        fields = ('name',)
