@@ -1,21 +1,35 @@
+import base64
+
+from django.core.files.base import ContentFile
 from djoser.serializers import UserSerializer as DjoserUserSerializer
 from rest_framework import serializers
 
 from recipes.constants import MIN_COOKING_TIME, MIN_INGREDIENT_AMOUNT
-from recipes.fields import Base64ImageField
 from recipes.models import (Favorite, Follow, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart, Tag, User)
+
+
+class Base64ImageField(serializers.ImageField):
+    """Кастомное поле для изображений в base64."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith('data:image'):
+            format, imgstr = data.split(';base64,')
+            ext = format.split('/')[-1]
+            data = ContentFile(base64.b64decode(imgstr), name=f'temp.{ext}')
+        return super().to_internal_value(data)
 
 
 class UserReadSerializer(DjoserUserSerializer):
     """Сериализатор для просмотра профиля пользователя."""
     is_subscribed = serializers.SerializerMethodField(read_only=True)
+    avatar = Base64ImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
         fields = (
             'email', 'id', 'username', 'first_name', 'last_name',
-            'is_subscribed'
+            'is_subscribed', 'avatar'
         )
 
     def get_is_subscribed(self, author):
@@ -92,8 +106,9 @@ class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
     amount = serializers.IntegerField(
         min_value=MIN_INGREDIENT_AMOUNT,
         error_messages={
-            'min_value':
-            f'Количество должно быть не меньше {MIN_INGREDIENT_AMOUNT}.'
+            'min_value': (
+                f'Количество должно быть не меньше {MIN_INGREDIENT_AMOUNT}.'
+            )
         }
     )
 
@@ -154,7 +169,9 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return instance
 
     def to_representation(self, instance):
-        return RecipeReadSerializer(instance, context=self.context).data
+        return RecipeReadSerializer(
+            instance, context={'request': self.context.get('request')}
+        ).data
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
@@ -165,7 +182,7 @@ class RecipeShortSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class AuthorSubscriptionSerializer(serializers.ModelSerializer):
+class AuthorSubscriptionSerializer(UserReadSerializer):
     """Сериализатор для отображения авторов в подписках с рецептами."""
     recipes_count = serializers.ReadOnlyField(source='recipes.count')
     recipes = serializers.SerializerMethodField()
