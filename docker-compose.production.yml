@@ -21,6 +21,7 @@ services:
     build: ./backend/
     restart: always
     volumes:
+      - ./data/:/app/data/
       - django_static_volume:/app/collected_static/
       - media_volume:/app/media/
     depends_on:
