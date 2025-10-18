@@ -1,13 +1,12 @@
+import json
+
 from django.core.management.base import BaseCommand
 
 
 class BaseLoader(BaseCommand):
-    """Базовый класс для загрузки данных."""
+    """Базовый класс для загрузки данных из JSON файлов."""
     model = None
     file_path = None
-
-    def load_data(self):
-        raise NotImplementedError("Метод `load_data` должен быть реализован.")
 
     def handle(self, *args, **kwargs):
         self.stdout.write(
@@ -15,7 +14,11 @@ class BaseLoader(BaseCommand):
         )
         try:
             self.model.objects.all().delete()
-            created_items = self.load_data()
+            with open(self.file_path, 'r', encoding='utf-8') as file:
+                items = (self.model(**item) for item in json.load(file))
+                created_items = self.model.objects.bulk_create(
+                    items, ignore_conflicts=True
+                )
             self.stdout.write(self.style.SUCCESS(
                 f'Загрузка завершена. Добавлено {len(created_items)} записей.'
             ))

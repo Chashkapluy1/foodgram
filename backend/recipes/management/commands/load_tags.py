@@ -7,4 +7,4 @@ class Command(BaseLoader):
     """Загрузка тегов из JSON файла."""
     model = Tag
     file_path = 'data/tags.json'
-    help = f'Загрузка тегов из {file_path}'
+    help = 'Загрузка тегов из data/tags.json'

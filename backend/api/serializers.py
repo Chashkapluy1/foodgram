@@ -21,9 +21,9 @@ class Base64ImageField(serializers.ImageField):
 
 
 class UserReadSerializer(DjoserUserSerializer):
-    """Сериализатор для безопасного просмотра профилей пользователей."""
+    """Сериализатор для пользователей."""
     is_subscribed = serializers.SerializerMethodField(read_only=True)
-    avatar = Base64ImageField(read_only=True)
+    avatar = Base64ImageField(required=False, allow_null=True)
 
     class Meta:
         model = User
@@ -31,7 +31,6 @@ class UserReadSerializer(DjoserUserSerializer):
             "email", "id", "username", "first_name", "last_name",
             "is_subscribed", "avatar"
         )
-        read_only_fields = fields
 
     def get_is_subscribed(self, author):
         user = self.context.get("request").user
@@ -39,17 +38,6 @@ class UserReadSerializer(DjoserUserSerializer):
             user.is_authenticated
             and user != author
             and Follow.objects.filter(user=user, author=author).exists()
-        )
-
-
-class CurrentUserSerializer(DjoserUserSerializer):
-    """Сериализатор для профиля текущего пользователя (разрешает запись)."""
-    avatar = Base64ImageField(required=False, allow_null=True)
-
-    class Meta:
-        model = User
-        fields = (
-            "email", "id", "username", "first_name", "last_name", "avatar"
         )
 
 
@@ -75,7 +63,6 @@ class RecipeIngredientReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecipeIngredient
         fields = ("id", "name", "measurement_unit", "amount")
-        read_only_fields = fields
 
 
 class RecipeReadSerializer(serializers.ModelSerializer):
@@ -90,10 +77,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = (
-            "id", "tags", "author", "ingredients", "is_favorited",
-            "is_in_shopping_cart", "name", "image", "text", "cooking_time",
-        )
+        exclude = ('pub_date',)
 
     def get_is_favorited(self, recipe):
         request = self.context.get("request")
@@ -107,16 +91,8 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
-    """Сериализатор для записи ингредиентов в рецепт."""
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
-    amount = serializers.IntegerField(
-        min_value=MIN_INGREDIENT_AMOUNT,
-        error_messages={
-            "min_value": (
-                f"Количество должно быть не меньше {MIN_INGREDIENT_AMOUNT}."
-            )
-        }
-    )
+    amount = serializers.IntegerField(min_value=MIN_INGREDIENT_AMOUNT)
 
     class Meta:
         model = RecipeIngredient
@@ -130,15 +106,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     )
     ingredients = RecipeIngredientWriteSerializer(many=True)
     image = Base64ImageField()
-    cooking_time = serializers.IntegerField(
-        min_value=MIN_COOKING_TIME,
-        error_messages={
-            "min_value": (
-                "Время приготовления должно быть не меньше "
-                f"{MIN_COOKING_TIME}."
-            )
-        }
-    )
+    cooking_time = serializers.IntegerField(min_value=MIN_COOKING_TIME)
 
     class Meta:
         model = Recipe
@@ -147,7 +115,6 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         )
 
     def _add_ingredients_and_tags(self, recipe, ingredients, tags):
-        """Вспомогательный метод для добавления тегов и ингредиентов."""
         if tags is not None:
             recipe.tags.set(tags)
         if ingredients is not None:
@@ -175,10 +142,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
         return instance
 
     def to_representation(self, instance):
-        return RecipeReadSerializer(
-            instance,
-            context=self.context
-        ).data
+        return RecipeReadSerializer(instance, context=self.context).data
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
@@ -202,10 +166,6 @@ class AuthorSubscriptionSerializer(UserReadSerializer):
             "recipes_limit"
         )
         recipes = author.recipes.all()
-        if recipes_limit_str:
-            try:
-                recipes_limit = int(recipes_limit_str)
-                recipes = recipes[:recipes_limit]
-            except (TypeError, ValueError):
-                pass
+        if recipes_limit_str and recipes_limit_str.isdigit():
+            recipes = recipes[:int(recipes_limit_str)]
         return RecipeShortSerializer(recipes, many=True).data

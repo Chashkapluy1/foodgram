@@ -17,24 +17,25 @@ class ImagePreviewWidget(forms.FileInput):
                 '<div><p style="margin-top: 10px;">'
                 '<strong>Текущее изображение:</strong></p>'
                 '<img src="{}" style="max-height: 150px; '
-                'border-radius: 5px;" />'
-                '</div>',
+                'border-radius: 5px;" /></div>',
                 value.url
             )
-            return format_html('{}<p style="margin-top: 10px;">'
-                               '<strong>Изменить:</strong></p>{}',
-                               preview_html, html)
+            return format_html(
+                '{}<p style="margin-top: 10px;"><strong>'
+                'Изменить:</strong></p>{}',
+                preview_html, html
+            )
         return html
 
 
 class RecipeCountAdminMixin:
     @admin.display(description="В рецептах")
-    def get_recipe_count(self, obj):
-        return obj.recipes.count()
+    def get_recipe_count(self, recipe):
+        return recipe.recipes.count()
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(BaseUserAdmin, RecipeCountAdminMixin):
     """Кастомизация админ-панели для пользователей."""
     list_display = (
         'id', 'username', 'get_full_name', 'email', 'get_image_preview',
@@ -57,35 +58,30 @@ class UserAdmin(BaseUserAdmin):
         return form
 
     @admin.display(description='ФИО')
-    def get_full_name(self, obj):
-        return f'{obj.first_name} {obj.last_name}'.strip()
+    def get_full_name(self, user):
+        return f'{user.first_name} {user.last_name}'.strip()
 
     @admin.display(description='Аватар')
-    def get_image_preview(self, obj):
-        if obj.avatar:
+    def get_image_preview(self, user):
+        if user.avatar:
             return format_html(
                 '<img src="{}" style="max-width: 50px; '
                 'border-radius: 50%;" />',
-                obj.avatar.url
+                user.avatar.url
             )
         return "Нет аватара"
 
-    @admin.display(description='Рецептов')
-    def get_recipe_count(self, obj):
-        return obj.recipes.count()
-
     @admin.display(description='Подписчиков')
-    def get_followers_count(self, obj):
-        return obj.following.count()
+    def get_followers_count(self, user):
+        return user.following.count()
 
     @admin.display(description='Подписок')
-    def get_following_count(self, obj):
-        return obj.followers.count()
+    def get_following_count(self, user):
+        return user.followers.count()
 
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin, RecipeCountAdminMixin):
-    """Кастомизация админ-панели для ингредиентов."""
     list_display = ('id', 'name', 'measurement_unit', 'get_recipe_count')
     search_fields = ('name', 'measurement_unit')
     list_filter = ('measurement_unit',)
@@ -93,14 +89,12 @@ class IngredientAdmin(admin.ModelAdmin, RecipeCountAdminMixin):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin, RecipeCountAdminMixin):
-    """Кастомизация админ-панели для тегов."""
     list_display = ('id', 'name', 'slug', 'get_recipe_count')
     search_fields = ('name', 'slug')
     prepopulated_fields = {'slug': ('name',)}
 
 
 class RecipeIngredientInline(admin.TabularInline):
-    """Вспомогательный класс для отображения ингредиентов в рецепте."""
     model = RecipeIngredient
     extra = 1
     min_num = 1
@@ -108,7 +102,6 @@ class RecipeIngredientInline(admin.TabularInline):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    """Кастомизация админ-панели для рецептов."""
     list_display = (
         'id', 'name', 'author', 'get_tags_display', 'get_ingredients_display',
         'get_favorites_count', 'get_image_preview'
@@ -124,29 +117,27 @@ class RecipeAdmin(admin.ModelAdmin):
         return form
 
     @admin.display(description='Теги')
-    def get_tags_display(self, obj):
-        return ", ".join([tag.name for tag in obj.tags.all()])
+    def get_tags_display(self, recipe):
+        return ", ".join(tag.name for tag in recipe.tags.all())
 
     @admin.display(description='Ингредиенты')
-    def get_ingredients_display(self, obj):
-        ingredients = obj.recipe_ingredients.select_related('ingredient')
-        display_text = [
+    def get_ingredients_display(self, recipe):
+        ingredients = recipe.recipe_ingredients.select_related('ingredient')
+        display_text = (
             f'{item.ingredient.name} '
             f'({item.amount} {item.ingredient.measurement_unit})'
-            for item in ingredients[:3]
-        ]
-        if ingredients.count() > 3:
-            display_text.append('...')
+            for item in ingredients
+        )
         return format_html("<br>".join(display_text))
 
     @admin.display(description='В избранном')
-    def get_favorites_count(self, obj):
-        return obj.favorites.count()
+    def get_favorites_count(self, recipe):
+        return recipe.favorites.count()
 
     @admin.display(description='Превью')
-    def get_image_preview(self, obj):
-        if obj.image:
-            return format_html(f'<img src="{obj.image.url}" width="75"/>')
+    def get_image_preview(self, recipe):
+        if recipe.image:
+            return format_html(f'<img src="{recipe.image.url}" width="75"/>')
         return "Нет картинки"
 
 
