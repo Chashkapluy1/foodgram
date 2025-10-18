@@ -36,7 +36,7 @@ services:
 
   frontend:
     build: ./frontend/
-    # ИЗМЕНЕНИЕ 1: Складываем результат сборки в общий том frontend_build_volume
+    # Складываем результат сборки в общий том frontend_build_volume
     volumes:
       - frontend_build_volume:/app/build
 
@@ -58,6 +58,6 @@ volumes:
   pg_data:
   static_volume:
   media_volume:
-  # ИЗМЕНЕНИЕ 3: Объявляем новый том
+  # Объявляем новый том
   frontend_build_volume:
   

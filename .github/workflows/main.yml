@@ -16,7 +16,11 @@ jobs:
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
         ports: ["5432:5432"]
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
     - name: Check out code
       uses: actions/checkout@v3
@@ -71,7 +75,8 @@ jobs:
     - name: Push gateway to DockerHub
       uses: docker/build-push-action@v4
       with:
-        context: ./infra/
+        context: .
+        file: ./infra/Dockerfile
         push: true
         tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_gateway:latest
 
@@ -91,11 +96,7 @@ jobs:
           cd foodgram
           git pull
           echo "${{ secrets.DOT_ENV }}" > .env
-          
-          # Запускаем новые контейнеры с принудительной пересборкой
           sudo docker compose -p foodgram_project -f docker-compose.production.yml up -d --build
-          
-          # Очищаем "мусорные" образы
           sudo docker image prune -f
 
   send_message:
