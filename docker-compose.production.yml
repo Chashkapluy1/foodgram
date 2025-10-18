@@ -45,7 +45,9 @@ services:
       - "foodgram_network"
 
   gateway:
-    build: "./infra/"
+    build:
+      context: .
+      dockerfile: ./infra/Dockerfile
     restart: "always"
     ports:
       - "8001:80"
