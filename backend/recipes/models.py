@@ -14,7 +14,7 @@ class User(AbstractUser):
         'Адрес электронной почты', unique=True, max_length=254
     )
     username = models.CharField(
-        'Уникальный юзернейм',
+        'Юзернейм',
         unique=True,
         max_length=150,
         validators=[
