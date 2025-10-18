@@ -7,7 +7,6 @@ from .models import (Favorite, Follow, Ingredient, Recipe, RecipeIngredient,
                      ShoppingCart, Tag, User)
 
 
-# Убираем стандартную модель
 admin.site.unregister(Group)
 
 
@@ -20,7 +19,6 @@ class UserAdmin(BaseUserAdmin):
     )
     search_fields = ('username', 'email')
     list_filter = ('is_staff', 'is_superuser', 'is_active')
-    # Добавляем 'avatar', чтобы его можно было редактировать
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
         ('Персональная информация', {'fields': ('first_name', 'last_name',
@@ -52,7 +50,6 @@ class IngredientAdmin(admin.ModelAdmin):
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     """Кастомизация админ-панели для тегов."""
-    # Убираем 'color' из списка.
     list_display = ('name', 'slug', 'get_recipe_count')
     search_fields = ('name', 'slug')
 

@@ -22,10 +22,6 @@ class BaseLoader(BaseCommand):
                 'Загрузка завершена. '
                 f'Добавлено {len(created_items)} новых записей.'
             ))
-        except FileNotFoundError:
-            self.stdout.write(self.style.ERROR(
-                f'Файл {self.file_path} не найден.'
-            ))
         except Exception as e:
             self.stdout.write(self.style.ERROR(
                 f'Ошибка при загрузке {self.file_path}: {e}'

@@ -41,13 +41,14 @@ services:
       - frontend_build_volume:/app/build
 
   gateway:
-    build: ./infra/
+    build:
+      context: .
+      dockerfile: ./infra/Dockerfile
     ports:
       - "80:80"
     volumes:
       - static_volume:/app/collected_static/
       - media_volume:/app/media/
-      # ИЗМЕНЕНИЕ 2: Забираем собранный фронтенд из общего тома
       - frontend_build_volume:/app/frontend_static/
     depends_on:
       - backend
