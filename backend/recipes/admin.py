@@ -16,7 +16,7 @@ class ImagePreviewWidget(forms.FileInput):
             preview_html = format_html(
                 '<div><p style="margin-top: 10px;">'
                 '<strong>Текущее изображение:</strong></p>'
-                '<img src="{}" style="max-height: 150px;'
+                '<img src="{}" style="max-height: 150px; '
                 'border-radius: 5px;" />'
                 '</div>',
                 value.url
@@ -148,21 +148,6 @@ class RecipeAdmin(admin.ModelAdmin):
         if obj.image:
             return format_html(f'<img src="{obj.image.url}" width="75"/>')
         return "Нет картинки"
-
-
-@admin.register(Ingredient)
-class IngredientAdmin(admin.ModelAdmin):
-    """Кастомизация админ-панели для ингредиентов."""
-    list_display = ('id', 'name', 'measurement_unit')
-    search_fields = ('name', 'measurement_unit')
-    list_filter = ('measurement_unit',)
-
-
-@admin.register(Tag)
-class TagAdmin(admin.ModelAdmin, RecipeCountAdminMixin):
-    list_display = ('id', 'name', 'slug', 'get_recipe_count')
-    search_fields = ('name', 'slug')
-    prepopulated_fields = {'slug': ('name',)}
 
 
 @admin.register(Favorite)
