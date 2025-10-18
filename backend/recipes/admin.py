@@ -88,8 +88,8 @@ class RecipeIngredientInline(admin.TabularInline):
 class RecipeAdmin(admin.ModelAdmin):
     """Кастомизация админ-панели для рецептов."""
     list_display = (
-        'id', 'name', 'author', 'get_tags_display', 'get_favorites_count',
-        'get_image_preview'
+        'id', 'name', 'author', 'get_tags_display', 'get_ingredients_display',
+        'get_favorites_count', 'get_image_preview'
     )
     list_filter = ('author', 'tags', 'name')
     search_fields = ('name', 'author__username')
@@ -104,6 +104,18 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='Теги')
     def get_tags_display(self, obj):
         return ", ".join([tag.name for tag in obj.tags.all()])
+
+    @admin.display(description='Ингредиенты')
+    def get_ingredients_display(self, obj):
+        ingredients = obj.recipe_ingredients.select_related('ingredient')
+        display_text = [
+            f'{item.ingredient.name} '
+            f'({item.amount} {item.ingredient.measurement_unit})'
+            for item in ingredients[:3]
+        ]
+        if ingredients.count() > 3:
+            display_text.append('...')
+        return format_html("<br>".join(display_text))
 
     @admin.display(description='В избранном')
     def get_favorites_count(self, obj):
