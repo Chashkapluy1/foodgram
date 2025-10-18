@@ -33,7 +33,8 @@ class UserAdmin(BaseUserAdmin):
     def get_image_preview(self, obj):
         if obj.avatar:
             return format_html(
-                '<img src="{}" style="max-width: 50px; border-radius: 50%;" />',
+                '<img src="{}" style="max-width: 50px; '
+                'border-radius: 50%;" />',
                 obj.avatar.url
             )
         return "Нет аватара"
