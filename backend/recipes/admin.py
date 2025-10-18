@@ -106,7 +106,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'id', 'name', 'author', 'get_tags_display', 'get_ingredients_display',
         'get_favorites_count', 'get_image_preview'
     )
-    list_filter = ('author', 'tags', 'name')
+    list_filter = ('author', 'tags')
     search_fields = ('name', 'author__username')
     inlines = (RecipeIngredientInline,)
     readonly_fields = ('get_favorites_count',)
