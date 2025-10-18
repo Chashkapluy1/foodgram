@@ -1,11 +1,11 @@
 Список покупок от {{ date }}
 
---- ИНГРЕДИЕНТЫ ---
+ИНГРЕДИЕНТЫ:
 {% for item in ingredients %}
 - {{ item.ingredient__name|capfirst }} ({{ item.ingredient__measurement_unit }}) — {{ item.total_amount }}
 {% endfor %}
 
---- РЕЦЕПТЫ В СПИСКЕ ---
+РЕЦЕПТЫ В СПИСКЕ:
 {% for recipe in recipes %}
 - {{ recipe.name }} (автор: {{ recipe.author.username }})
 {% endfor %}

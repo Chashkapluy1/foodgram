@@ -1,4 +1,4 @@
-import io
+from datetime import datetime
 
 from django.db.models import Sum
 from django.http import FileResponse
@@ -177,14 +177,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         recipes_in_cart = Recipe.objects.filter(
             shopping_carts__user=request.user
-        ).values_list('name', flat=True)
+        ).select_related('author')
+
+        today = datetime.today()
+        context = {
+            'date': today.strftime('%d.%m.%Y'),
+            'ingredients': ingredients,
+            'recipes': recipes_in_cart
+        }
 
         shopping_list_text = render_to_string(
-            'shopping_list.txt',
-            {'ingredients': ingredients, 'recipes': recipes_in_cart}
+            'shopping_list.txt', context
         )
+
         return FileResponse(
-            io.BytesIO(shopping_list_text.encode('utf-8')),
+            shopping_list_text,
             as_attachment=True,
-            filename='shopping_list.txt'
+            filename='shopping_list.txt',
+            content_type='text/plain; charset=utf-8'
         )
