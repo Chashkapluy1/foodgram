@@ -2,9 +2,29 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
 from django.utils.html import format_html
+from django import forms
 
 from .models import (Favorite, Follow, Ingredient, Recipe, RecipeIngredient,
                      ShoppingCart, Tag, User)
+
+
+class ImagePreviewWidget(forms.FileInput):
+    """Кастомный виджет для отображения превью изображения."""
+    def render(self, name, value, attrs=None, renderer=None):
+        html = super().render(name, value, attrs, renderer)
+        if value and hasattr(value, 'url'):
+            preview_html = format_html(
+                '<div><p style="margin-top: 10px;">'
+                '<strong>Текущее изображение:</strong></p>'
+                '<img src="{}" style="max-height: 150px; '
+                'border-radius: 5px;" />'
+                '</div>',
+                value.url
+            )
+            return format_html('{}<p style="margin-top: 10px;">'
+                               '<strong>Изменить:</strong></p>{}',
+                               preview_html, html)
+        return html
 
 
 @admin.register(User)
@@ -23,7 +43,12 @@ class UserAdmin(BaseUserAdmin):
         ('Разрешения', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
         ('Важные даты', {'fields': ('last_login', 'date_joined')}),
     )
-    readonly_fields = ('last_login', 'date_joined', 'get_image_preview')
+    readonly_fields = ('last_login', 'date_joined')
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields['avatar'].widget = ImagePreviewWidget()
+        return form
 
     @admin.display(description='ФИО')
     def get_full_name(self, obj):
@@ -69,7 +94,12 @@ class RecipeAdmin(admin.ModelAdmin):
     list_filter = ('author', 'tags', 'name')
     search_fields = ('name', 'author__username')
     inlines = (RecipeIngredientInline,)
-    readonly_fields = ('get_favorites_count', 'get_image_preview')
+    readonly_fields = ('get_favorites_count',)
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields['image'].widget = ImagePreviewWidget()
+        return form
 
     @admin.display(description='Теги')
     def get_tags_display(self, obj):
