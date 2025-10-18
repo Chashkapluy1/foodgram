@@ -109,6 +109,6 @@ DEBUG=False
 # Разрешенные хосты
 ALLOWED_HOSTS='foodgram10.duckdns.org,127.0.0.1,localhost'
 Автор
-Имя: Павел Лагерев
-GitHub: Chashkapluy1
-Telegram: @Chashkapluy
+**Имя:** Павел Лагерев
+*   **GitHub:** [Chashkapluy1](https://github.com/Chashkapluy1)
+*   **Telegram:** [@Chashkapluy](https://t.me/Chashkapluy)

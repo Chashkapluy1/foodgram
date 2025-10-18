@@ -5,8 +5,8 @@ from djoser.serializers import UserSerializer as DjoserUserSerializer
 from rest_framework import serializers
 
 from recipes.constants import MIN_COOKING_TIME, MIN_INGREDIENT_AMOUNT
-from recipes.models import (Favorite, Follow, Ingredient, Recipe,
-                            RecipeIngredient, ShoppingCart, Tag, User)
+from recipes.models import (Follow, Ingredient, Recipe,
+                            RecipeIngredient, Tag, User)
 
 
 class Base64ImageField(serializers.ImageField):
@@ -21,9 +21,9 @@ class Base64ImageField(serializers.ImageField):
 
 
 class UserReadSerializer(DjoserUserSerializer):
-    """Сериализатор для просмотра профиля пользователя."""
+    """Сериализатор для безопасного просмотра профилей пользователей."""
     is_subscribed = serializers.SerializerMethodField(read_only=True)
-    avatar = Base64ImageField(required=False, allow_null=True)
+    avatar = Base64ImageField(read_only=True)
 
     class Meta:
         model = User
@@ -31,6 +31,7 @@ class UserReadSerializer(DjoserUserSerializer):
             "email", "id", "username", "first_name", "last_name",
             "is_subscribed", "avatar"
         )
+        read_only_fields = fields
 
     def get_is_subscribed(self, author):
         user = self.context.get("request").user
@@ -41,16 +42,27 @@ class UserReadSerializer(DjoserUserSerializer):
         )
 
 
+class CurrentUserSerializer(DjoserUserSerializer):
+    """Сериализатор для профиля текущего пользователя (разрешает запись)."""
+    avatar = Base64ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = User
+        fields = (
+            "email", "id", "username", "first_name", "last_name", "avatar"
+        )
+
+
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ("id", "name", "color", "slug")
+        fields = "__all__"
 
 
 class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
-        fields = ("id", "name", "measurement_unit")
+        fields = "__all__"
 
 
 class RecipeIngredientReadSerializer(serializers.ModelSerializer):
@@ -83,19 +95,15 @@ class RecipeReadSerializer(serializers.ModelSerializer):
             "is_in_shopping_cart", "name", "image", "text", "cooking_time",
         )
 
-    def _is_in_user_list(self, model, recipe):
-        """Проверяет, находится ли рецепт в списке пользователя."""
-        user = self.context.get("request").user
-        return (
-            user.is_authenticated
-            and model.objects.filter(user=user, recipe=recipe).exists()
-        )
-
     def get_is_favorited(self, recipe):
-        return self._is_in_user_list(Favorite, recipe)
+        request = self.context.get("request")
+        return (request and request.user.is_authenticated
+                and recipe.favorites.filter(user=request.user).exists())
 
     def get_is_in_shopping_cart(self, recipe):
-        return self._is_in_user_list(ShoppingCart, recipe)
+        request = self.context.get("request")
+        return (request and request.user.is_authenticated
+                and recipe.shopping_carts.filter(user=request.user).exists())
 
 
 class RecipeIngredientWriteSerializer(serializers.ModelSerializer):
@@ -162,7 +170,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         tags = validated_data.pop("tags", None)
         ingredients = validated_data.pop("ingredients", None)
-        instance = super().update(instance, validated_data)
+        super().update(instance, validated_data)
         self._add_ingredients_and_tags(instance, ingredients, tags)
         return instance
 

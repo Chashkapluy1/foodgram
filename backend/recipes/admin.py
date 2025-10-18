@@ -16,7 +16,7 @@ class ImagePreviewWidget(forms.FileInput):
             preview_html = format_html(
                 '<div><p style="margin-top: 10px;">'
                 '<strong>Текущее изображение:</strong></p>'
-                '<img src="{}" style="max-height: 150px; '
+                '<img src="{}" style="max-height: 150px;'
                 'border-radius: 5px;" />'
                 '</div>',
                 value.url
@@ -25,6 +25,12 @@ class ImagePreviewWidget(forms.FileInput):
                                '<strong>Изменить:</strong></p>{}',
                                preview_html, html)
         return html
+
+
+class RecipeCountAdminMixin:
+    @admin.display(description="В рецептах")
+    def get_recipe_count(self, obj):
+        return obj.recipes.count()
 
 
 @admin.register(User)
@@ -75,6 +81,22 @@ class UserAdmin(BaseUserAdmin):
     @admin.display(description='Подписок')
     def get_following_count(self, obj):
         return obj.followers.count()
+
+
+@admin.register(Ingredient)
+class IngredientAdmin(admin.ModelAdmin, RecipeCountAdminMixin):
+    """Кастомизация админ-панели для ингредиентов."""
+    list_display = ('id', 'name', 'measurement_unit', 'get_recipe_count')
+    search_fields = ('name', 'measurement_unit')
+    list_filter = ('measurement_unit',)
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin, RecipeCountAdminMixin):
+    """Кастомизация админ-панели для тегов."""
+    list_display = ('id', 'name', 'slug', 'get_recipe_count')
+    search_fields = ('name', 'slug')
+    prepopulated_fields = {'slug': ('name',)}
 
 
 class RecipeIngredientInline(admin.TabularInline):
@@ -136,7 +158,11 @@ class IngredientAdmin(admin.ModelAdmin):
     list_filter = ('measurement_unit',)
 
 
-admin.site.register(Tag)
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin, RecipeCountAdminMixin):
+    list_display = ('id', 'name', 'slug', 'get_recipe_count')
+    search_fields = ('name', 'slug')
+    prepopulated_fields = {'slug': ('name',)}
 
 
 @admin.register(Favorite)

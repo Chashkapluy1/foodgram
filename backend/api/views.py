@@ -38,28 +38,32 @@ class UserViewSet(DjoserUserViewSet):
         permission_classes=[IsAuthenticated]
     )
     def subscribe(self, request, id=None):
+        if request.method == 'DELETE':
+            deleted_count, _ = Follow.objects.filter(
+                user=request.user, author_id=id
+            ).delete()
+            if not deleted_count:
+                raise ValidationError({'errors': 'Вы не были подписаны.'})
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
         author = get_object_or_404(User, id=id)
 
-        if request.method == 'POST':
-            if request.user == author:
-                raise ValidationError(
-                    {'errors': 'Нельзя подписаться на самого себя.'}
-                )
-            if Follow.objects.filter(user=request.user,
-                                     author=author).exists():
-                raise ValidationError(
-                    {'errors': f'Вы уже подписаны на {author.username}.'}
-                )
-            Follow.objects.create(user=request.user, author=author)
-            serializer = AuthorSubscriptionSerializer(
-                author, context={'request': request}
+        if request.user == author:
+            raise ValidationError(
+                {'errors': 'Нельзя подписаться на самого себя.'}
             )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        get_object_or_404(
-            Follow, user=request.user, author_id=id
-        ).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        _, created = Follow.objects.get_or_create(user=request.user,
+                                                  author=author)
+        if not created:
+            raise ValidationError(
+                {'errors': f'Вы уже подписаны на {author.username}.'}
+            )
+        return Response(
+            AuthorSubscriptionSerializer(
+                author, context={'request': request}
+            ).data,
+            status=status.HTTP_201_CREATED
+        )
 
     @action(
         detail=False, methods=['get'], permission_classes=[IsAuthenticated]
@@ -133,9 +137,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, pk=pk)
         _, created = model.objects.get_or_create(user=user, recipe=recipe)
         if not created:
+            list_names = {
+                Favorite: 'избранное',
+                ShoppingCart: 'список покупок'
+            }
+            list_name = list_names.get(model, 'этот список')
             raise ValidationError(
                 {'errors':
-                 f'Рецепт "{recipe.name}" уже был добавлен в список.'}
+                 f'Рецепт "{recipe.name}" уже в списке ({list_name})'}
             )
         return Response(
             RecipeShortSerializer(recipe).data, status=status.HTTP_201_CREATED
@@ -189,7 +198,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         shopping_list_text = render_to_string(
             'shopping_list.txt', context
         )
-
         return FileResponse(
             shopping_list_text,
             as_attachment=True,
