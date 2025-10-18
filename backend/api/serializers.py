@@ -20,10 +20,26 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
+class AvatarSerializer(serializers.Serializer):
+    """Сериализатор для валидации и декодирования аватара."""
+    avatar = serializers.CharField()
+
+    def validate_avatar(self, avatar_data):
+        if not avatar_data.startswith('data:image'):
+            raise serializers.ValidationError('Неверный формат изображения.')
+        try:
+            format, imgstr = avatar_data.split(';base64,')
+            ext = format.split('/')[-1]
+            decoded_file = base64.b64decode(imgstr)
+            return ContentFile(decoded_file, name=f'avatar.{ext}')
+        except Exception:
+            raise serializers.ValidationError('Ошибка декодирования.')
+
+
 class UserReadSerializer(DjoserUserSerializer):
-    """Сериализатор для пользователей."""
+    """Сериализатор для безопасного просмотра профилей пользователей."""
     is_subscribed = serializers.SerializerMethodField(read_only=True)
-    avatar = Base64ImageField(required=False, allow_null=True)
+    avatar = Base64ImageField(read_only=True)
 
     class Meta:
         model = User
@@ -31,6 +47,7 @@ class UserReadSerializer(DjoserUserSerializer):
             "email", "id", "username", "first_name", "last_name",
             "is_subscribed", "avatar"
         )
+        read_only_fields = fields
 
     def get_is_subscribed(self, author):
         user = self.context.get("request").user

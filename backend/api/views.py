@@ -19,7 +19,7 @@ from recipes.models import (
 from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
-    AuthorSubscriptionSerializer, IngredientSerializer,
+    AuthorSubscriptionSerializer, AvatarSerializer, IngredientSerializer,
     RecipeReadSerializer, RecipeShortSerializer, RecipeWriteSerializer,
     TagSerializer, UserReadSerializer
 )
@@ -71,21 +71,26 @@ class UserViewSet(DjoserUserViewSet):
             ).data
         )
 
-    @action(detail=False, methods=['patch', 'delete'],
-            permission_classes=[IsAuthenticated], url_path='me/avatar')
+    @action(
+        detail=False,
+        methods=['put', 'delete'],
+        permission_classes=[IsAuthenticated],
+        url_path='me/avatar'
+    )
     def avatar(self, request):
-        """Метод для управления аватаром пользователя."""
+        """Обновить или удалить аватар текущего пользователя."""
         user = request.user
-        if request.method == 'PATCH':
-            serializer = self.get_serializer(
-                user, data=request.data, partial=True
-            )
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        if request.method == 'DELETE':
+            user.avatar.delete(save=True)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
-        user.avatar.delete(save=True)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        serializer = AvatarSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user.avatar = serializer.validated_data['avatar']
+        user.save()
+        return Response(
+            {'avatar': user.avatar.url}, status=status.HTTP_200_OK
+        )
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
