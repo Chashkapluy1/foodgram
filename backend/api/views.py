@@ -1,9 +1,5 @@
-from datetime import datetime
-
-from django.db.models import Sum
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
-from django.template.loader import render_to_string
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import status, viewsets
@@ -12,10 +8,9 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from recipes.models import (
-    Favorite, Follow, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Tag,
-    User
-)
+from recipes.utils import format_shopping_list
+from recipes.models import (Favorite, Follow, Ingredient,
+                            Recipe, ShoppingCart, Tag, User)
 from .filters import IngredientFilter, RecipeFilter
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
@@ -163,24 +158,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
         """Отдает пользователю .txt файл со списком покупок."""
-        ingredients = RecipeIngredient.objects.filter(
-            recipe__shopping_carts__user=request.user
-        ).values(
-            'ingredient__name', 'ingredient__measurement_unit'
-        ).annotate(total_amount=Sum('amount')).order_by('ingredient__name')
-        recipes_in_cart = Recipe.objects.filter(
-            shopping_carts__user=request.user
-        ).select_related('author')
-        today = datetime.today()
-        context = {
-            'date': today.strftime('%d.%m.%Y'),
-            'ingredients': ingredients,
-            'recipes': recipes_in_cart
-        }
-        shopping_list_text = render_to_string('shopping_list.txt', context)
+        shopping_list_text = format_shopping_list(request.user)
         return FileResponse(
             shopping_list_text,
             as_attachment=True,
             filename='shopping_list.txt',
-            content_type='text/plain'
+            content_type='text/plain; charset=utf-8'
         )

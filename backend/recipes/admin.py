@@ -115,15 +115,17 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='Теги')
     def get_tags_display(self, recipe):
-        return ", ".join(tag.name for tag in recipe.tags.all())
+        return mark_safe("<br>".join(tag.name for tag in recipe.tags.all()))
 
     @admin.display(description='Ингредиенты')
     def get_ingredients_display(self, recipe):
-        return mark_safe("<br>".join(
+        ingredients = recipe.recipe_ingredients.select_related('ingredient')
+        display_text = (
             f'{item.ingredient.name} '
             f'({item.amount} {item.ingredient.measurement_unit})'
-            for item in recipe.recipe_ingredients.select_related('ingredient')
-        ))
+            for item in ingredients
+        )
+        return mark_safe("<br>".join(display_text))
 
     @admin.display(description='В избранном')
     def get_favorites_count(self, recipe):

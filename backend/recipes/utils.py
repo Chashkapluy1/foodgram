@@ -19,7 +19,9 @@ def format_shopping_list(user):
         "ingredient__name", "ingredient__measurement_unit"
     ).annotate(total_amount=Sum("amount")).order_by("ingredient__name")
 
-    recipes = Recipe.objects.filter(shopping_carts__user=user)
+    recipes = Recipe.objects.filter(
+        shopping_carts__user=user
+    ).select_related('author')
 
     now = datetime.now()
     context = {
