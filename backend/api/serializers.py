@@ -94,7 +94,10 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        exclude = ('pub_date',)
+        fields = (
+            'id', 'tags', 'author', 'ingredients', 'name', 'image', 'text',
+            'cooking_time', 'is_favorited', 'is_in_shopping_cart'
+        )
 
     def get_is_favorited(self, recipe):
         request = self.context.get("request")
@@ -154,8 +157,14 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         tags = validated_data.pop("tags", None)
         ingredients = validated_data.pop("ingredients", None)
-        super().update(instance, validated_data)
+        instance.name = validated_data.get('name', instance.name)
+        instance.text = validated_data.get('text', instance.text)
+        instance.image = validated_data.get('image', instance.image)
+        instance.cooking_time = validated_data.get(
+            'cooking_time', instance.cooking_time
+        )
         self._add_ingredients_and_tags(instance, ingredients, tags)
+        instance.save()
         return instance
 
     def to_representation(self, instance):
@@ -183,6 +192,10 @@ class AuthorSubscriptionSerializer(UserReadSerializer):
             "recipes_limit"
         )
         recipes = author.recipes.all()
-        if recipes_limit_str and recipes_limit_str.isdigit():
-            recipes = recipes[:int(recipes_limit_str)]
+        if recipes_limit_str:
+            try:
+                recipes_limit = int(recipes_limit_str)
+                recipes = recipes[:recipes_limit]
+            except (ValueError, TypeError):
+                pass
         return RecipeShortSerializer(recipes, many=True).data
