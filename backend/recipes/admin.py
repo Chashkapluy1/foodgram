@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import Group
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django import forms
 
 from .models import (Favorite, Follow, Ingredient, Recipe, RecipeIngredient,
@@ -13,25 +13,23 @@ class ImagePreviewWidget(forms.FileInput):
     def render(self, name, value, attrs=None, renderer=None):
         html = super().render(name, value, attrs, renderer)
         if value and hasattr(value, 'url'):
-            preview_html = format_html(
+            preview_html = (
                 '<div><p style="margin-top: 10px;">'
                 '<strong>Текущее изображение:</strong></p>'
                 '<img src="{}" style="max-height: 150px; '
-                'border-radius: 5px;" /></div>',
-                value.url
-            )
-            return format_html(
+                'border-radius: 5px;" /></div>'
+            ).format(value.url)
+            return mark_safe(
                 '{}<p style="margin-top: 10px;"><strong>'
-                'Изменить:</strong></p>{}',
-                preview_html, html
+                'Изменить:</strong></p>{}'.format(preview_html, html)
             )
         return html
 
 
 class RecipeCountAdminMixin:
     @admin.display(description="В рецептах")
-    def get_recipe_count(self, recipe):
-        return recipe.recipes.count()
+    def get_recipe_count(self, obj):
+        return obj.recipes.count()
 
 
 @admin.register(User)
@@ -64,12 +62,11 @@ class UserAdmin(BaseUserAdmin, RecipeCountAdminMixin):
     @admin.display(description='Аватар')
     def get_image_preview(self, user):
         if user.avatar:
-            return format_html(
+            return mark_safe(
                 '<img src="{}" style="max-width: 50px; '
-                'border-radius: 50%;" />',
-                user.avatar.url
+                'border-radius: 50%;" />'.format(user.avatar.url)
             )
-        return "Нет аватара"
+        return ""
 
     @admin.display(description='Подписчиков')
     def get_followers_count(self, user):
@@ -122,13 +119,11 @@ class RecipeAdmin(admin.ModelAdmin):
 
     @admin.display(description='Ингредиенты')
     def get_ingredients_display(self, recipe):
-        ingredients = recipe.recipe_ingredients.select_related('ingredient')
-        display_text = (
+        return mark_safe("<br>".join(
             f'{item.ingredient.name} '
             f'({item.amount} {item.ingredient.measurement_unit})'
-            for item in ingredients
-        )
-        return format_html("<br>".join(display_text))
+            for item in recipe.recipe_ingredients.select_related('ingredient')
+        ))
 
     @admin.display(description='В избранном')
     def get_favorites_count(self, recipe):
@@ -137,8 +132,8 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='Превью')
     def get_image_preview(self, recipe):
         if recipe.image:
-            return format_html(f'<img src="{recipe.image.url}" width="75"/>')
-        return "Нет картинки"
+            return mark_safe(f'<img src="{recipe.image.url}" width="75"/>')
+        return ""
 
 
 @admin.register(Favorite)
