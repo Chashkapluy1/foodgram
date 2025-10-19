@@ -163,5 +163,5 @@ class RecipeViewSet(viewsets.ModelViewSet):
             shopping_list_text,
             as_attachment=True,
             filename='shopping_list.txt',
-            content_type='text/plain; charset=utf-8'
+            content_type='text/plain'
         )

@@ -157,14 +157,8 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         tags = validated_data.pop("tags", None)
         ingredients = validated_data.pop("ingredients", None)
-        instance.name = validated_data.get('name', instance.name)
-        instance.text = validated_data.get('text', instance.text)
-        instance.image = validated_data.get('image', instance.image)
-        instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time
-        )
+        instance = super().update(instance, validated_data)
         self._add_ingredients_and_tags(instance, ingredients, tags)
-        instance.save()
         return instance
 
     def to_representation(self, instance):
