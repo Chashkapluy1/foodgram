@@ -10,17 +10,17 @@ class BaseLoader(BaseCommand):
 
     def handle(self, *args, **kwargs):
         self.stdout.write(
-            self.style.SUCCESS(f'Начинаю загрузку из {self.file_path}')
+            self.style.SUCCESS(f'Начинается загрузка из {self.file_path}')
         )
         try:
-            self.model.objects.all().delete()
             with open(self.file_path, 'r', encoding='utf-8') as file:
-                items = (self.model(**item) for item in json.load(file))
                 created_items = self.model.objects.bulk_create(
-                    items, ignore_conflicts=True
+                    (self.model(**item) for item in json.load(file)),
+                    ignore_conflicts=True
                 )
             self.stdout.write(self.style.SUCCESS(
-                f'Загрузка завершена. Добавлено {len(created_items)} записей.'
+                (f'Загрузка завершена. Добавлено {len(created_items)} '
+                 'новых записей.')
             ))
         except Exception as e:
             self.stdout.write(self.style.ERROR(
